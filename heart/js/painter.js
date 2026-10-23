@@ -116,6 +116,10 @@ function applySwatch(button, hex) {
 function openPicker(button) {
   picking = button;
   picker.value = button.dataset.color;
+  const canvas = document.querySelector("#canvas");
+  const rect = canvas.getBoundingClientRect();
+  picker.style.left = `${Math.round(rect.left + rect.width * 0.5)}px`;
+  picker.style.top = `${Math.round(rect.top + rect.height * 0.38)}px`;
   picker.click();
 }
 
