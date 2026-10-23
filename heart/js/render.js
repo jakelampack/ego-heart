@@ -90,6 +90,7 @@ const GLOW = {
   inner: 0.28,
   distance: 0.6,
   angle: 90,
+  softness: 0,
 };
 
 // Color texture on the stroke. amount is how white the hottest parts get.
@@ -232,6 +233,26 @@ function createRenderer(canvas) {
     ctx.stroke();
   }
 
+  function drawPaint(stroke, width, color) {
+    const softness = glowNumber(stroke.softness, GLOW.softness, 0, 1.4);
+    if (softness <= 0.001) {
+      drawSmooth(stroke, width, color);
+      return;
+    }
+    const blur = Math.max(1, width * softness * 0.55);
+    const body = Math.max(1, width - blur * 2);
+    const shift = canvas.height + width + blur + 8;
+    ctx.save();
+    ctx.shadowColor = stroke.color;
+    ctx.shadowBlur = blur;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = shift;
+    ctx.translate(0, -shift);
+    drawSmooth(stroke, body, stroke.color);
+    ctx.restore();
+    drawSmooth(stroke, Math.max(1, body * 0.62), color);
+  }
+
   const heatPatterns = new Map();
 
   function paintInk(stroke, color) {
@@ -313,7 +334,7 @@ function createRenderer(canvas) {
     ctx.shadowBlur = width * spread * GLOW.inner;
     drawSmooth(stroke, width, stroke.color);
     clearShadow();
-    drawSmooth(stroke, width, paintInk(stroke, stroke.color));
+    drawPaint(stroke, width, paintInk(stroke, stroke.color));
     ctx.restore();
   }
 
@@ -420,6 +441,7 @@ function createRenderer(canvas) {
           angle: glowNumber(stroke.angle, GLOW.angle, 0, 360),
           heat: glowNumber(stroke.heat, HEAT.amount, 0, 1),
           grain: glowNumber(stroke.grain, HEAT.grain, 0.02, 0.45),
+          softness: glowNumber(stroke.softness, GLOW.softness, 0, 1.4),
           shadow: level(stroke.shadow),
           points: stroke.points.map((point) => [point[0], point[1]]),
         });
@@ -440,6 +462,7 @@ function createRenderer(canvas) {
         angle: glowNumber(stroke.angle, GLOW.angle, 0, 360),
         heat: glowNumber(stroke.heat, HEAT.amount, 0, 1),
         grain: glowNumber(stroke.grain, HEAT.grain, 0.02, 0.45),
+        softness: glowNumber(stroke.softness, GLOW.softness, 0, 1.4),
         shadow: level(stroke.shadow),
         trail: 0,
         points: [[stroke.x, stroke.y]],
@@ -473,6 +496,7 @@ function createRenderer(canvas) {
           angle: stroke.angle,
           heat: stroke.heat,
           grain: stroke.grain,
+          softness: stroke.softness,
           shadow: stroke.shadow,
           points: stroke.points.map((point) => [point[0], point[1]]),
         };

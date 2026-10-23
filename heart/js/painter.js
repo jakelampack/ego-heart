@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer, heatPreview } from "./render.js?v=25";
+import { applyMessage, connectSocket, createRenderer, heatPreview } from "./render.js?v=27";
 
 const COLORS = [
   "#ffe24a",
@@ -24,6 +24,12 @@ const SPREADS = [
   { value: 3.2, label: "Tight spread", blur: 5 },
   { value: 6.4, label: "Medium spread", blur: 11 },
   { value: 10, label: "Wide spread", blur: 18 },
+];
+
+const SOFTNESS = [
+  { value: 0, label: "Hard edge", fade: 72 },
+  { value: 0.45, label: "Soft edge", fade: 42 },
+  { value: 0.9, label: "Softer edge", fade: 8 },
 ];
 
 const DISTANCES = [
@@ -57,6 +63,7 @@ const canvas = document.querySelector("#canvas");
 const swatches = document.querySelector("#swatches");
 const sizes = document.querySelector("#sizes");
 const spreads = document.querySelector("#spreads");
+const softnesses = document.querySelector("#softness");
 const distances = document.querySelector("#distances");
 const positions = document.querySelector("#positions");
 const heats = document.querySelector("#heats");
@@ -78,6 +85,7 @@ const HISTORY = 80;
 let color = COLORS[COLORS.length - 1];
 let width = SIZES[1].width;
 let spread = SPREADS[1].value;
+let softness = SOFTNESS[0].value;
 let distance = DISTANCES[0].value;
 let angle = POSITIONS[0].angle;
 let heat = HEATS[1].value;
@@ -233,6 +241,20 @@ function selectSpread(next) {
   markGroup(spreads, ".fx", "spread", next);
 }
 
+function selectSoftness(next) {
+  softness = next;
+  markGroup(softnesses, ".fx", "softness", next);
+}
+
+function paintSoftDot(dot, fade) {
+  dot.style.width = "22px";
+  dot.style.height = "22px";
+  dot.style.background =
+    fade >= 70
+      ? "#ffe24a"
+      : `radial-gradient(circle, #ffe24a ${fade}%, rgba(255, 226, 74, 0) 100%)`;
+}
+
 function selectDistance(next) {
   distance = next;
   markGroup(distances, ".fx", "distance", next);
@@ -266,6 +288,11 @@ for (const item of SPREADS) {
     dot.style.boxShadow = `0 0 ${choice.blur}px ${Math.round(choice.blur / 2)}px rgba(255, 226, 74, 0.95)`;
   });
 }
+for (const item of SOFTNESS) {
+  addTune(softnesses, item, "softness", selectSoftness, (dot, choice) => {
+    paintSoftDot(dot, choice.fade);
+  });
+}
 for (const item of DISTANCES) {
   addTune(distances, item, "distance", selectDistance, (dot, choice) => {
     dot.style.transform = `translate(${choice.shift}px, ${choice.shift}px)`;
@@ -290,6 +317,7 @@ for (const item of SHADOWS) {
   addEffect(shadows, item, "shadow", selectShadow);
 }
 selectSpread(spread);
+selectSoftness(softness);
 selectDistance(distance);
 selectAngle(angle);
 selectHeat(heat);
@@ -383,6 +411,7 @@ function beginStroke(pointerId, point) {
     color,
     width,
     spread,
+    softness,
     distance,
     angle,
     heat,
@@ -397,6 +426,7 @@ function beginStroke(pointerId, point) {
     color,
     width,
     spread,
+    softness,
     distance,
     angle,
     heat,
