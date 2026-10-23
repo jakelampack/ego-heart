@@ -181,12 +181,15 @@ body.display canvas {
   gap: 16px;
 }
 
-.tune-label.section-note {
+.section-note {
   color: rgba(243, 239, 230, 0.48);
+  font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.04em;
-  text-transform: none;
+  line-height: 12px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .color-picker {

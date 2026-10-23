@@ -90,7 +90,7 @@ const GLOW = {
   inner: 0.28,
   distance: 0.6,
   angle: 90,
-  softness: 0.75,
+  softness: 0,
   edge: 1,
   bloom: 5,
 };
@@ -233,9 +233,9 @@ function createRenderer(canvas) {
       const ny = Math.sin(turn) * 2.6 + y * 0.02;
       const lump = valueNoise(nx, ny);
       const grit = valueNoise(nx * 3.4 + 6.2, ny * 3.4 - 2.5);
-      const outward = Math.max(0, Math.cos(turn - angle));
-      const rough = radius * (0.74 + lump * 0.38 + grit * 0.14 + outward * 0.28);
-      const reach = radius + (rough - radius) * amount;
+      const forward = angle == null ? 1 : Math.max(0, Math.cos(turn - angle));
+      const rough = radius * (0.74 + lump * 0.38 + grit * 0.14 + forward * 0.28);
+      const reach = radius + (rough - radius) * amount * forward;
       const px = x + Math.cos(turn) * reach;
       const py = y + Math.sin(turn) * reach;
       if (i === 0) {
@@ -253,12 +253,12 @@ function createRenderer(canvas) {
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
     ctx.lineWidth = width;
-    ctx.lineCap = "butt";
+    ctx.lineCap = "round";
     ctx.lineJoin = "round";
     const edge = glowNumber(stroke.edge, GLOW.edge, 0, 2);
     const first = [points[0][0] * canvas.width, points[0][1] * canvas.height];
     if (points.length === 1) {
-      brushTip(first[0], first[1], width / 2, 0, edge);
+      brushTip(first[0], first[1], width / 2, null, edge);
       return;
     }
     const last = [points[points.length - 1][0] * canvas.width, points[points.length - 1][1] * canvas.height];
@@ -269,8 +269,17 @@ function createRenderer(canvas) {
     ];
     ctx.beginPath();
     ctx.moveTo(first[0], first[1]);
-    for (let i = 1; i < points.length; i += 1) {
-      ctx.lineTo(points[i][0] * canvas.width, points[i][1] * canvas.height);
+    if (points.length === 2) {
+      ctx.lineTo(last[0], last[1]);
+    } else {
+      for (let i = 1; i < points.length - 1; i += 1) {
+        const curr = points[i];
+        const next = points[i + 1];
+        const mx = ((curr[0] + next[0]) / 2) * canvas.width;
+        const my = ((curr[1] + next[1]) / 2) * canvas.height;
+        ctx.quadraticCurveTo(curr[0] * canvas.width, curr[1] * canvas.height, mx, my);
+      }
+      ctx.lineTo(last[0], last[1]);
     }
     ctx.stroke();
     brushTip(first[0], first[1], width / 2, Math.atan2(first[1] - after[1], first[0] - after[0]), edge);
