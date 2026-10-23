@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=34";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=36";
 
 const COLORS = [
   "#ffe24a",
@@ -51,10 +51,10 @@ let color = COLORS[0];
 let width = SIZES[1].width;
 let spread = 6.4;
 let bloom = 5;
-let softness = 0;
+let softness = 0.75;
 let distance = 0.6;
 let angle = 90;
-let heat = 0.62;
+let heat = 0.85;
 let grain = 0.11;
 let heatSoft = 0.55;
 let shadow = 0;

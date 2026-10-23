@@ -90,14 +90,14 @@ const GLOW = {
   inner: 0.28,
   distance: 0.6,
   angle: 90,
-  softness: 0,
+  softness: 0.75,
   bloom: 5,
 };
 
 // Color texture on the stroke. amount is how white the hottest parts get.
 // grain is the patch size as a fraction of the shorter canvas side.
 const HEAT = {
-  amount: 0.62,
+  amount: 0.85,
   grain: 0.11,
   softness: 0.55,
 };

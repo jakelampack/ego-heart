@@ -107,7 +107,7 @@ body.display canvas {
 
 .tools {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: nowrap;
   gap: 16px;
   width: 100%;
@@ -151,18 +151,45 @@ body.display canvas {
 
 .divider {
   width: 1px;
-  height: 32px;
+  align-self: stretch;
   flex: 0 0 auto;
   background: rgba(243, 239, 230, 0.4);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.section-label {
+  min-height: 14px;
+  color: rgba(243, 239, 230, 0.92);
+  font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 14px;
+  text-transform: uppercase;
+}
+
+.section-controls {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
 }
 
 .sizes,
 .brushes {
   display: flex;
+  flex-direction: column-reverse;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
   flex: 0 0 auto;
+  padding: 8px 4px;
 }
 
 .size {
@@ -216,12 +243,15 @@ body.display canvas {
 }
 
 .tune-label {
+  min-height: 14px;
   color: rgba(243, 239, 230, 0.72);
   font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.14em;
+  line-height: 14px;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .effects {
