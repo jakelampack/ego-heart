@@ -13,13 +13,33 @@
     <link rel="icon" href="css/favicon.png?v=1" type="image/png" sizes="64x64" />
     <link rel="icon" href="css/favicon.svg?v=1" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="css/app.css?v=33" />
+    <link rel="stylesheet" href="css/app.css?v=35" />
   </head>
   <body class="painter" data-local="true">
     <p class="turn" id="turn">Turn sideways to carve</p>
     <canvas id="canvas"></canvas>
     <p class="status" id="status" hidden>Connecting</p>
     <footer class="dock" id="dock">
+      <div class="dock-bar">
+        <button class="step" id="undo" type="button" aria-label="Undo" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5.11 9.15A8.3 8.3 0 1 0 12.3 5" />
+            <path d="M12.3 2.4 8.4 5l3.9 2.6" />
+          </svg>
+        </button>
+        <button class="step" id="redo" type="button" aria-label="Redo" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18.89 9.15A8.3 8.3 0 1 1 11.7 5" />
+            <path d="M11.7 2.4 15.6 5l-3.9 2.6" />
+          </svg>
+        </button>
+        <button class="erase" id="erase" type="button">Clear Carving</button>
+        <button class="step" id="tools-toggle" type="button" aria-expanded="false" aria-label="Show tools">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 14.5 12 8.5 18 14.5" />
+          </svg>
+        </button>
+      </div>
       <div class="tray">
         <div class="tray-clip">
           <div class="tools">
@@ -74,26 +94,6 @@
             </button>
           </div>
         </div>
-      </div>
-      <div class="dock-bar">
-        <button class="step" id="undo" type="button" aria-label="Undo" disabled>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5.11 9.15A8.3 8.3 0 1 0 12.3 5" />
-            <path d="M12.3 2.4 8.4 5l3.9 2.6" />
-          </svg>
-        </button>
-        <button class="step" id="redo" type="button" aria-label="Redo" disabled>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M18.89 9.15A8.3 8.3 0 1 1 11.7 5" />
-            <path d="M11.7 2.4 15.6 5l-3.9 2.6" />
-          </svg>
-        </button>
-        <button class="erase" id="erase" type="button">Clear Carving</button>
-        <button class="step" id="tools-toggle" type="button" aria-expanded="false" aria-label="Show tools">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6 14.5 12 8.5 18 14.5" />
-          </svg>
-        </button>
       </div>
     </footer>
     <script type="module" src="js/painter.js?v=34"></script>
