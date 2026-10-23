@@ -181,6 +181,25 @@ body.display canvas {
   gap: 16px;
 }
 
+.tune-label.section-note {
+  color: rgba(243, 239, 230, 0.48);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.color-picker {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+}
+
 .sizes {
   position: relative;
   display: flex;

@@ -90,10 +90,44 @@ function selectColor(next) {
   paintLook();
 }
 
-for (const value of COLORS) {
+const picker = document.createElement("input");
+picker.type = "color";
+picker.className = "color-picker";
+picker.tabIndex = -1;
+picker.setAttribute("aria-label", "Edit color");
+document.body.append(picker);
+let picking = null;
+let lastSwatch = null;
+let lastSwatchTap = 0;
+
+function applySwatch(button, hex) {
+  const next = hex.toLowerCase();
+  COLORS[Number(button.dataset.index)] = next;
+  button.dataset.color = next;
+  button.style.background = next;
+  button.setAttribute("aria-label", next);
+  if (button.getAttribute("aria-pressed") === "true") {
+    selectColor(next);
+  }
+}
+
+function openPicker(button) {
+  picking = button;
+  picker.value = button.dataset.color;
+  picker.click();
+}
+
+picker.addEventListener("input", () => {
+  if (picking) {
+    applySwatch(picking, picker.value);
+  }
+});
+
+for (const [index, value] of COLORS.entries()) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "swatch";
+  button.dataset.index = String(index);
   button.dataset.color = value;
   button.style.background = value;
   button.setAttribute("aria-label", value);
@@ -101,8 +135,27 @@ for (const value of COLORS) {
   button.addEventListener("pointerdown", (event) => {
     event.stopPropagation();
   });
+  button.addEventListener("pointerup", (event) => {
+    if (event.pointerType === "mouse") {
+      return;
+    }
+    const now = performance.now();
+    if (lastSwatch === button && now - lastSwatchTap < 400) {
+      lastSwatch = null;
+      lastSwatchTap = 0;
+      openPicker(button);
+      return;
+    }
+    lastSwatch = button;
+    lastSwatchTap = now;
+  });
   button.addEventListener("click", () => {
-    selectColor(value);
+    selectColor(button.dataset.color);
+  });
+  button.addEventListener("dblclick", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openPicker(button);
   });
   swatches.append(button);
 }
