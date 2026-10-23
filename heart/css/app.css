@@ -226,28 +226,28 @@ body.display canvas {
 
 .slider {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  width: 168px;
-  height: 36px;
+  gap: 6px;
+  width: 52px;
   touch-action: none;
 }
 
 .slider-track {
   position: relative;
-  flex: 1 1 auto;
-  height: 36px;
+  width: 36px;
+  height: 128px;
   touch-action: none;
   cursor: pointer;
 }
 
 .slider-line {
   position: absolute;
-  left: 8px;
-  right: 8px;
-  top: 50%;
-  height: 3px;
-  margin-top: -1.5px;
+  left: 50%;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  margin-left: -1.5px;
   border-radius: 999px;
   background: rgba(243, 239, 230, 0.28);
 }
@@ -255,15 +255,16 @@ body.display canvas {
 .slider-fill {
   position: absolute;
   left: 0;
-  top: 0;
+  right: 0;
   bottom: 0;
+  width: 100%;
   border-radius: inherit;
   background: #ffe24a;
 }
 
 .slider-thumb {
   position: absolute;
-  top: 50%;
+  left: 50%;
   width: 18px;
   height: 18px;
   margin: -9px 0 0 -9px;
@@ -274,13 +275,12 @@ body.display canvas {
 
 .slider-value {
   flex: 0 0 auto;
-  min-width: 46px;
   color: var(--paper);
   font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  text-align: center;
 }
 
 #shadows {

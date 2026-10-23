@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=31";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=32";
 
 const COLORS = [
   "#ffe24a",
@@ -215,15 +215,15 @@ function addSlider(root, { label, min, max, step, value, digits, suffix, onInput
   function paint() {
     const span = max - min;
     const t = span === 0 ? 0 : (current - min) / span;
-    fill.style.width = `${t * 100}%`;
-    thumb.style.left = `${t * 100}%`;
+    fill.style.height = `${t * 100}%`;
+    thumb.style.top = `${(1 - t) * 100}%`;
     const text = `${current.toFixed(digits)}${suffix}`;
     readout.textContent = text;
     slider.setAttribute("aria-valuenow", text);
   }
-  function setFromX(clientX) {
+  function setFromY(clientY) {
     const rect = track.getBoundingClientRect();
-    const t = rect.width === 0 ? 0 : Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    const t = rect.height === 0 ? 0 : Math.min(1, Math.max(0, 1 - (clientY - rect.top) / rect.height));
     const stepped = Math.round((min + t * (max - min)) / step) * step;
     const next = Math.min(max, Math.max(min, Number(stepped.toFixed(digits))));
     if (next === current) {
@@ -241,7 +241,7 @@ function addSlider(root, { label, min, max, step, value, digits, suffix, onInput
     } catch {
       // The pointer is only capturable for a real press.
     }
-    setFromX(event.clientX);
+    setFromY(event.clientY);
   }
   track.addEventListener("pointerdown", point);
   track.addEventListener("pointermove", (event) => {
@@ -250,7 +250,7 @@ function addSlider(root, { label, min, max, step, value, digits, suffix, onInput
     }
     event.preventDefault();
     event.stopPropagation();
-    setFromX(event.clientX);
+    setFromY(event.clientY);
   });
   paint();
 }
@@ -258,7 +258,7 @@ function addSlider(root, { label, min, max, step, value, digits, suffix, onInput
 addSlider(spreads, {
   label: "Spread",
   min: 0.4,
-  max: 16,
+  max: 40,
   step: 0.1,
   value: spread,
   digits: 1,

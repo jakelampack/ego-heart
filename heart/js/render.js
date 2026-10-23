@@ -237,14 +237,23 @@ function createRenderer(canvas) {
     ctx.stroke();
   }
 
+  function drawShifted(stroke, width, color) {
+    const shift = canvas.height + width + 80;
+    ctx.save();
+    ctx.shadowOffsetY += shift;
+    ctx.translate(0, -shift);
+    drawSmooth(stroke, width, color);
+    ctx.restore();
+  }
+
   function drawPaint(stroke, width, color) {
     const softness = glowNumber(stroke.softness, GLOW.softness, 0, 1);
     if (softness <= 0.001) {
       drawSmooth(stroke, width, color);
       return;
     }
-    const blur = Math.max(0.6, width * softness * 0.48);
-    const body = Math.max(1, width * (1 - softness * 0.22));
+    const blur = Math.max(1, width * softness * 1.35);
+    const body = Math.max(1, width * (1 - softness * 0.45));
     ctx.save();
     ctx.filter = `blur(${blur}px)`;
     drawSmooth(stroke, body, color);
@@ -308,7 +317,7 @@ function createRenderer(canvas) {
     }
     const width = strokeWidth(canvas, stroke.width);
     const shadow = level(stroke.shadow);
-    const spread = glowNumber(stroke.spread, GLOW.spread, 0.4, 16);
+    const spread = glowNumber(stroke.spread, GLOW.spread, 0.4, 40);
     const distance = glowNumber(stroke.distance, GLOW.distance, 0, 4);
     const angle = glowNumber(stroke.angle, GLOW.angle, 0, 360);
     const radians = (angle * Math.PI) / 180;
@@ -332,9 +341,9 @@ function createRenderer(canvas) {
     ctx.shadowBlur = width * spread;
     ctx.shadowOffsetX = Math.cos(radians) * width * distance;
     ctx.shadowOffsetY = Math.sin(radians) * width * distance;
-    drawSmooth(stroke, width, stroke.color);
+    drawShifted(stroke, width, stroke.color);
     ctx.shadowBlur = width * spread * GLOW.inner;
-    drawSmooth(stroke, width, stroke.color);
+    drawShifted(stroke, width, stroke.color);
     clearShadow();
     drawPaint(stroke, width, paintInk(stroke, stroke.color));
     ctx.restore();
@@ -438,7 +447,7 @@ function createRenderer(canvas) {
           id: stroke.id,
           color: stroke.color,
           width: stroke.width,
-          spread: glowNumber(stroke.spread, GLOW.spread, 0.4, 16),
+          spread: glowNumber(stroke.spread, GLOW.spread, 0.4, 40),
           distance: glowNumber(stroke.distance, GLOW.distance, 0, 4),
           angle: glowNumber(stroke.angle, GLOW.angle, 0, 360),
           heat: glowNumber(stroke.heat, HEAT.amount, 0, 1),
@@ -460,7 +469,7 @@ function createRenderer(canvas) {
         id: stroke.id,
         color: stroke.color,
         width: stroke.width,
-        spread: glowNumber(stroke.spread, GLOW.spread, 0.4, 16),
+        spread: glowNumber(stroke.spread, GLOW.spread, 0.4, 40),
         distance: glowNumber(stroke.distance, GLOW.distance, 0, 4),
         angle: glowNumber(stroke.angle, GLOW.angle, 0, 360),
         heat: glowNumber(stroke.heat, HEAT.amount, 0, 1),
@@ -515,7 +524,7 @@ function createRenderer(canvas) {
       for (const stroke of strokes.values()) {
         stroke.color = look.color;
         stroke.width = look.width;
-        stroke.spread = glowNumber(look.spread, GLOW.spread, 0.4, 16);
+        stroke.spread = glowNumber(look.spread, GLOW.spread, 0.4, 40);
         stroke.distance = glowNumber(look.distance, GLOW.distance, 0, 4);
         stroke.angle = glowNumber(look.angle, GLOW.angle, 0, 360);
         stroke.heat = glowNumber(look.heat, HEAT.amount, 0, 1);
