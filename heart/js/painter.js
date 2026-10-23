@@ -113,15 +113,22 @@ function applySwatch(button, hex) {
   }
 }
 
-function openPicker(button) {
+function openPicker(button, event) {
   picking = button;
   picker.value = button.dataset.color;
-  const canvas = document.querySelector("#canvas");
-  const rect = canvas.getBoundingClientRect();
-  picker.style.left = `${Math.round(rect.left + rect.width * 0.5)}px`;
-  picker.style.top = `${Math.round(rect.top + rect.height * 0.38)}px`;
+  const point = event || button.getBoundingClientRect();
+  const x = Number.isFinite(point.clientX) ? point.clientX : point.left;
+  const y = Number.isFinite(point.clientY) ? point.clientY : point.bottom;
+  picker.style.left = `${Math.round(x)}px`;
+  picker.style.top = `${Math.round(y)}px`;
+  picker.style.width = "1px";
+  picker.style.height = `${Math.max(1, Math.round(window.innerHeight - y))}px`;
   picker.click();
 }
+
+picker.addEventListener("blur", () => {
+  picker.style.height = "1px";
+});
 
 picker.addEventListener("input", () => {
   if (picking) {
@@ -149,7 +156,7 @@ for (const [index, value] of COLORS.entries()) {
     if (lastSwatch === button && now - lastSwatchTap < 400) {
       lastSwatch = null;
       lastSwatchTap = 0;
-      openPicker(button);
+      openPicker(button, event);
       return;
     }
     lastSwatch = button;
@@ -161,7 +168,7 @@ for (const [index, value] of COLORS.entries()) {
   button.addEventListener("dblclick", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    openPicker(button);
+    openPicker(button, event);
   });
   swatches.append(button);
 }
