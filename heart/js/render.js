@@ -1,30 +1,4 @@
 const INSIDE = "#000000";
-const OUTSIDE = "#3d2918";
-
-function traceHeart(ctx, width, height) {
-  const margin = 0.045;
-  const maxW = width * (1 - margin * 2);
-  const maxH = height * (1 - margin * 2);
-  const aspect = 0.94;
-  let w = maxW;
-  let h = w / aspect;
-  if (h > maxH) {
-    h = maxH;
-    w = h * aspect;
-  }
-  const left = (width - w) / 2;
-  const top = (height - h) / 2;
-  const right = left + w;
-  const bottom = top + h;
-  const cx = left + w / 2;
-  ctx.beginPath();
-  ctx.moveTo(cx, top + h * 0.3);
-  ctx.bezierCurveTo(cx, top + h * 0.1, left + w * 0.16, top, left, top + h * 0.28);
-  ctx.bezierCurveTo(left, top + h * 0.54, left + w * 0.22, top + h * 0.7, cx, bottom);
-  ctx.bezierCurveTo(right - w * 0.22, top + h * 0.7, right, top + h * 0.54, right, top + h * 0.28);
-  ctx.bezierCurveTo(right - w * 0.16, top, cx, top + h * 0.1, cx, top + h * 0.3);
-  ctx.closePath();
-}
 
 const DEFAULT_WIDTH = 0.012;
 const BRUSHES = new Set(["circle", "star", "diamond", "triangle"]);
@@ -193,6 +167,7 @@ function createRenderer(canvas) {
   const strokes = new Map();
   const order = [];
   let mask = false;
+  const scene = new Image();
 
   function placeStamp(brush, x, y, pixels, color) {
     fillStamp(ctx, brush, x, y, pixels, color);
@@ -408,15 +383,7 @@ function createRenderer(canvas) {
   }
 
   function clipped(draw) {
-    if (!mask) {
-      draw();
-      return;
-    }
-    ctx.save();
-    traceHeart(ctx, canvas.width, canvas.height);
-    ctx.clip();
     draw();
-    ctx.restore();
   }
 
   function paintSegment(stroke, from, to) {
@@ -459,16 +426,15 @@ function createRenderer(canvas) {
   }
 
   function paintField() {
-    if (!mask) {
-      ctx.fillStyle = INSIDE;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = INSIDE;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (!mask || !scene.complete || scene.naturalWidth === 0) {
       return;
     }
-    ctx.fillStyle = OUTSIDE;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    traceHeart(ctx, canvas.width, canvas.height);
-    ctx.fillStyle = INSIDE;
-    ctx.fill();
+    const scale = Math.max(canvas.width / scene.naturalWidth, canvas.height / scene.naturalHeight);
+    const width = scene.naturalWidth * scale;
+    const height = scene.naturalHeight * scale;
+    ctx.drawImage(scene, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
   }
 
   function redraw() {
@@ -491,6 +457,13 @@ function createRenderer(canvas) {
     }
     redraw();
   }
+
+  scene.addEventListener("load", () => {
+    if (mask) {
+      redraw();
+    }
+  });
+  scene.src = new URL("../img/heart-bark.jpg", import.meta.url).href;
 
   return {
     resize,

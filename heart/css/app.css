@@ -428,22 +428,18 @@ body.display canvas {
 
 .mask svg {
   width: 22px;
-  height: 20px;
+  height: 22px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.7;
+  stroke-width: 1.6;
   stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
 .mask[aria-pressed="true"] {
   background: var(--paper);
   color: var(--bar);
   border-color: var(--paper);
-}
-
-.mask[aria-pressed="true"] svg {
-  fill: currentColor;
-  stroke: none;
 }
 
 .dock-bar .step {
