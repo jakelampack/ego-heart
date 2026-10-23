@@ -13,11 +13,11 @@ const COLORS = [
 ];
 
 const SIZES = [
-  { width: 0.006, dot: 14, label: "Smallest brush" },
-  { width: 0.012, dot: 22, label: "Small brush" },
-  { width: 0.02, dot: 32, label: "Medium brush" },
-  { width: 0.036, dot: 42, label: "Large brush" },
-  { width: 0.058, dot: 52, label: "Largest brush" },
+  { width: 0.006, dot: 10, label: "Smallest brush" },
+  { width: 0.012, dot: 16, label: "Small brush" },
+  { width: 0.02, dot: 22, label: "Medium brush" },
+  { width: 0.036, dot: 28, label: "Large brush" },
+  { width: 0.058, dot: 34, label: "Largest brush" },
 ];
 
 const MIN_SPACING = 0.001;
