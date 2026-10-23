@@ -119,19 +119,17 @@ body.display canvas {
 }
 
 .swatches {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow-x: auto;
-  padding: 8px 6px;
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(3, 40px);
+  gap: 12px;
+  flex: 0 0 auto;
+  padding: 8px;
 }
 
 .swatch {
-  width: 46px;
-  height: 46px;
-  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
   border: 0;
   border-radius: 50%;
   padding: 0;
@@ -154,7 +152,8 @@ body.display canvas {
 .brushes {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
   flex: 0 0 auto;
 }
 

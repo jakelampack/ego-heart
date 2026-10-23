@@ -13,7 +13,7 @@
     <link rel="icon" href="css/favicon.png?v=1" type="image/png" sizes="64x64" />
     <link rel="icon" href="css/favicon.svg?v=1" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="css/app.css?v=32" />
+    <link rel="stylesheet" href="css/app.css?v=33" />
   </head>
   <body class="painter" data-local="true">
     <p class="turn" id="turn">Turn sideways to carve</p>
@@ -25,9 +25,15 @@
           <div class="tools">
             <div class="swatches" id="swatches"></div>
             <span class="divider" aria-hidden="true"></span>
-            <div class="sizes" id="sizes"></div>
+            <div class="tune">
+              <span class="tune-label">Stroke Size</span>
+              <div class="sizes" id="sizes"></div>
+            </div>
             <span class="divider" aria-hidden="true"></span>
-            <span class="divider" aria-hidden="true"></span>
+            <div class="tune">
+              <span class="tune-label">Bloom</span>
+              <div class="effects" id="blooms"></div>
+            </div>
             <div class="tune">
               <span class="tune-label">Spread</span>
               <div class="effects" id="spreads"></div>
@@ -90,6 +96,6 @@
         </button>
       </div>
     </footer>
-    <script type="module" src="js/painter.js?v=32"></script>
+    <script type="module" src="js/painter.js?v=33"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=32";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=33";
 
 const COLORS = [
   "#ffe24a",
@@ -26,6 +26,7 @@ const canvas = document.querySelector("#canvas");
 const swatches = document.querySelector("#swatches");
 const sizes = document.querySelector("#sizes");
 const spreads = document.querySelector("#spreads");
+const blooms = document.querySelector("#blooms");
 const softnesses = document.querySelector("#softness");
 const distances = document.querySelector("#distances");
 const positions = document.querySelector("#positions");
@@ -49,6 +50,7 @@ const HISTORY = 80;
 let color = COLORS[0];
 let width = SIZES[1].width;
 let spread = 6.4;
+let bloom = 5;
 let softness = 0;
 let distance = 0.6;
 let angle = 90;
@@ -255,6 +257,19 @@ function addSlider(root, { label, min, max, step, value, digits, suffix, onInput
   paint();
 }
 
+addSlider(blooms, {
+  label: "Bloom",
+  min: 0,
+  max: 16,
+  step: 0.1,
+  value: bloom,
+  digits: 1,
+  suffix: "",
+  onInput(next) {
+    bloom = next;
+    paintLook();
+  },
+});
 addSlider(spreads, {
   label: "Spread",
   min: 0.4,
@@ -352,7 +367,7 @@ for (const item of SHADOWS) {
 selectShadow(shadow, false);
 
 function currentLook() {
-  return { color, width, spread, softness, distance, angle, heat, grain, heatSoft, shadow };
+  return { color, width, spread, bloom, softness, distance, angle, heat, grain, heatSoft, shadow };
 }
 
 function paintLook() {
@@ -455,6 +470,7 @@ function beginStroke(pointerId, point) {
     color,
     width,
     spread,
+    bloom,
     softness,
     distance,
     angle,
@@ -471,6 +487,7 @@ function beginStroke(pointerId, point) {
     color,
     width,
     spread,
+    bloom,
     softness,
     distance,
     angle,
