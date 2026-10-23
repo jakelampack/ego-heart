@@ -586,7 +586,6 @@ function createRenderer(canvas) {
     },
     restyle(look) {
       for (const stroke of strokes.values()) {
-        stroke.color = look.color;
         stroke.width = look.width;
         stroke.spread = glowNumber(look.spread, GLOW.spread, 0.4, 40);
         stroke.distance = glowNumber(look.distance, GLOW.distance, 0, 4);

@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=42";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=46";
 
 const canvas = document.querySelector("#canvas");
 const renderer = createRenderer(canvas);

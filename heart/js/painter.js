@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=42";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=46";
 
 const COLORS = [
   "#ffe24a",
@@ -89,7 +89,6 @@ function selectColor(next) {
   for (const button of swatches.querySelectorAll(".swatch")) {
     button.setAttribute("aria-pressed", button.dataset.color === next ? "true" : "false");
   }
-  paintLook();
 }
 
 const picker = document.createElement("input");
@@ -451,10 +450,11 @@ function currentLook() {
 
 function paintLook() {
   const look = currentLook();
-  renderer.restyle(look);
+  const { color: _kept, ...rest } = look;
+  renderer.restyle(rest);
   for (const shot of [...undoStack, ...redoStack]) {
     for (const stroke of shot) {
-      Object.assign(stroke, look);
+      Object.assign(stroke, rest);
     }
   }
   if (!local) {
