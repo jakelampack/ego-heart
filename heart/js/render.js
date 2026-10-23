@@ -98,6 +98,7 @@ const GLOW = {
 const HEAT = {
   amount: 0.62,
   grain: 0.11,
+  softness: 0.55,
 };
 
 function shadowInk(hex, mix) {
@@ -142,8 +143,11 @@ function heatField(x, y, cell) {
   return broad * 0.72 + detail * 0.28;
 }
 
-function heatMix(noise, amount) {
-  const t = Math.min(1, Math.max(0, (noise - 0.34) / 0.46));
+function heatMix(noise, amount, softness) {
+  const blend = glowNumber(softness, HEAT.softness, 0, 1);
+  const span = 0.05 + blend * 0.85;
+  const start = 0.62 - span * 0.55;
+  const t = Math.min(1, Math.max(0, (noise - start) / span));
   return fadeNoise(t) * amount;
 }
 
@@ -165,7 +169,7 @@ export function heatPreview(size, color, amount, cell) {
   const data = image.data;
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
-      const mix = amount <= 0 ? 0 : heatMix(heatField(x, y, cell), amount);
+      const mix = amount <= 0 ? 0 : heatMix(heatField(x, y, cell), amount, HEAT.softness);
       const index = (y * size + x) * 4;
       data[index] = red + (255 - red) * mix;
       data[index + 1] = green + (255 - green) * mix;
@@ -234,23 +238,17 @@ function createRenderer(canvas) {
   }
 
   function drawPaint(stroke, width, color) {
-    const softness = glowNumber(stroke.softness, GLOW.softness, 0, 1.4);
+    const softness = glowNumber(stroke.softness, GLOW.softness, 0, 1);
     if (softness <= 0.001) {
       drawSmooth(stroke, width, color);
       return;
     }
-    const blur = Math.max(1, width * softness * 0.55);
-    const body = Math.max(1, width - blur * 2);
-    const shift = canvas.height + width + blur + 8;
+    const blur = Math.max(0.6, width * softness * 0.48);
+    const body = Math.max(1, width * (1 - softness * 0.22));
     ctx.save();
-    ctx.shadowColor = stroke.color;
-    ctx.shadowBlur = blur;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = shift;
-    ctx.translate(0, -shift);
-    drawSmooth(stroke, body, stroke.color);
+    ctx.filter = `blur(${blur}px)`;
+    drawSmooth(stroke, body, color);
     ctx.restore();
-    drawSmooth(stroke, Math.max(1, body * 0.62), color);
   }
 
   const heatPatterns = new Map();
@@ -261,8 +259,9 @@ function createRenderer(canvas) {
       return color;
     }
     const grain = glowNumber(stroke.grain, HEAT.grain, 0.02, 0.45);
+    const heatSoft = glowNumber(stroke.heatSoft, HEAT.softness, 0, 1);
     const cell = Math.max(18, grain * Math.min(canvas.width, canvas.height));
-    const key = `${color}|${amount}|${Math.round(cell)}|${canvas.width}|${canvas.height}`;
+    const key = `${color}|${amount}|${heatSoft}|${Math.round(cell)}|${canvas.width}|${canvas.height}`;
     const cached = heatPatterns.get(key);
     if (cached) {
       return cached;
@@ -279,7 +278,7 @@ function createRenderer(canvas) {
     const data = image.data;
     for (let y = 0; y < rows; y += 1) {
       for (let x = 0; x < columns; x += 1) {
-        const mix = heatMix(heatField(x * step, y * step, cell), amount);
+        const mix = heatMix(heatField(x * step, y * step, cell), amount, heatSoft);
         const index = (y * columns + x) * 4;
         data[index] = red + (255 - red) * mix;
         data[index + 1] = green + (255 - green) * mix;
@@ -295,6 +294,9 @@ function createRenderer(canvas) {
     tileCtx.imageSmoothingEnabled = true;
     tileCtx.drawImage(sample, 0, 0, canvas.width, canvas.height);
     const pattern = ctx.createPattern(tile, "no-repeat");
+    if (heatPatterns.size > 8) {
+      heatPatterns.clear();
+    }
     heatPatterns.set(key, pattern);
     return pattern;
   }
@@ -441,7 +443,8 @@ function createRenderer(canvas) {
           angle: glowNumber(stroke.angle, GLOW.angle, 0, 360),
           heat: glowNumber(stroke.heat, HEAT.amount, 0, 1),
           grain: glowNumber(stroke.grain, HEAT.grain, 0.02, 0.45),
-          softness: glowNumber(stroke.softness, GLOW.softness, 0, 1.4),
+          softness: glowNumber(stroke.softness, GLOW.softness, 0, 1),
+          heatSoft: glowNumber(stroke.heatSoft, HEAT.softness, 0, 1),
           shadow: level(stroke.shadow),
           points: stroke.points.map((point) => [point[0], point[1]]),
         });
@@ -462,7 +465,8 @@ function createRenderer(canvas) {
         angle: glowNumber(stroke.angle, GLOW.angle, 0, 360),
         heat: glowNumber(stroke.heat, HEAT.amount, 0, 1),
         grain: glowNumber(stroke.grain, HEAT.grain, 0.02, 0.45),
-        softness: glowNumber(stroke.softness, GLOW.softness, 0, 1.4),
+        softness: glowNumber(stroke.softness, GLOW.softness, 0, 1),
+        heatSoft: glowNumber(stroke.heatSoft, HEAT.softness, 0, 1),
         shadow: level(stroke.shadow),
         trail: 0,
         points: [[stroke.x, stroke.y]],
@@ -497,6 +501,7 @@ function createRenderer(canvas) {
           heat: stroke.heat,
           grain: stroke.grain,
           softness: stroke.softness,
+          heatSoft: stroke.heatSoft,
           shadow: stroke.shadow,
           points: stroke.points.map((point) => [point[0], point[1]]),
         };

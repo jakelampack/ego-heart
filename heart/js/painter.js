@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer, heatPreview } from "./render.js?v=27";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=30";
 
 const COLORS = [
   "#ffe24a",
@@ -20,43 +20,6 @@ const SIZES = [
   { width: 0.058, dot: 52, label: "Largest brush" },
 ];
 
-const SPREADS = [
-  { value: 3.2, label: "Tight spread", blur: 5 },
-  { value: 6.4, label: "Medium spread", blur: 11 },
-  { value: 10, label: "Wide spread", blur: 18 },
-];
-
-const SOFTNESS = [
-  { value: 0, label: "Hard edge", fade: 72 },
-  { value: 0.45, label: "Soft edge", fade: 42 },
-  { value: 0.9, label: "Softer edge", fade: 8 },
-];
-
-const DISTANCES = [
-  { value: 0.6, label: "Close to the stroke", shift: 3 },
-  { value: 1.8, label: "Glass distance", shift: 7 },
-  { value: 3.2, label: "Far from the stroke", shift: 12 },
-];
-
-const POSITIONS = [
-  { angle: 90, label: "Glow below", x: 0, y: 6 },
-  { angle: 125, label: "Glow down and right", x: 5, y: 5 },
-  { angle: 200, label: "Glow down and left", x: -5, y: 4 },
-  { angle: 270, label: "Glow above", x: 0, y: -6 },
-];
-
-const HEATS = [
-  { value: 0, label: "Solid color", cell: 14 },
-  { value: 0.62, label: "Warm", cell: 14 },
-  { value: 1, label: "White hot", cell: 14 },
-];
-
-const GRAINS = [
-  { value: 0.045, label: "Fine texture", cell: 7 },
-  { value: 0.11, label: "Medium texture", cell: 14 },
-  { value: 0.22, label: "Broad texture", cell: 24 },
-];
-
 const MIN_SPACING = 0.001;
 
 const canvas = document.querySelector("#canvas");
@@ -68,6 +31,7 @@ const distances = document.querySelector("#distances");
 const positions = document.querySelector("#positions");
 const heats = document.querySelector("#heats");
 const grains = document.querySelector("#grains");
+const heatSoftness = document.querySelector("#heat-soft");
 const shadows = document.querySelector("#shadows");
 const dock = document.querySelector("#dock");
 const toolsToggle = document.querySelector("#tools-toggle");
@@ -82,14 +46,15 @@ const undoStack = [];
 const redoStack = [];
 const HISTORY = 80;
 
-let color = COLORS[COLORS.length - 1];
+let color = COLORS[0];
 let width = SIZES[1].width;
-let spread = SPREADS[1].value;
-let softness = SOFTNESS[0].value;
-let distance = DISTANCES[0].value;
-let angle = POSITIONS[0].angle;
-let heat = HEATS[1].value;
-let grain = GRAINS[1].value;
+let spread = 6.4;
+let softness = 0;
+let distance = 0.6;
+let angle = 90;
+let heat = 0.62;
+let grain = 0.11;
+let heatSoft = 0.55;
 let shadow = 0;
 let active = null;
 
@@ -218,110 +183,158 @@ function selectShadow(next) {
   markGroup(shadows, ".fx", "shadow", next);
 }
 
-function addTune(root, item, key, choose, paint) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "fx";
-  button.dataset[key] = String(item.value ?? item.angle);
-  button.setAttribute("aria-label", item.label);
-  const dot = document.createElement("span");
-  dot.className = "fx-dot";
-  paint(dot, item);
-  button.append(dot);
-  button.addEventListener("pointerdown", (event) => {
+function addSlider(root, { label, min, max, step, value, digits, suffix, onInput }) {
+  const slider = document.createElement("div");
+  slider.className = "slider";
+  slider.setAttribute("role", "slider");
+  slider.setAttribute("aria-label", label);
+  slider.setAttribute("aria-valuemin", String(min));
+  slider.setAttribute("aria-valuemax", String(max));
+  const track = document.createElement("div");
+  track.className = "slider-track";
+  const line = document.createElement("div");
+  line.className = "slider-line";
+  const fill = document.createElement("div");
+  fill.className = "slider-fill";
+  const thumb = document.createElement("div");
+  thumb.className = "slider-thumb";
+  const readout = document.createElement("span");
+  readout.className = "slider-value";
+  line.append(fill, thumb);
+  track.append(line);
+  slider.append(track, readout);
+  root.append(slider);
+  let current = value;
+  function paint() {
+    const span = max - min;
+    const t = span === 0 ? 0 : (current - min) / span;
+    fill.style.width = `${t * 100}%`;
+    thumb.style.left = `${t * 100}%`;
+    const text = `${current.toFixed(digits)}${suffix}`;
+    readout.textContent = text;
+    slider.setAttribute("aria-valuenow", text);
+  }
+  function setFromX(clientX) {
+    const rect = track.getBoundingClientRect();
+    const t = rect.width === 0 ? 0 : Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    const stepped = Math.round((min + t * (max - min)) / step) * step;
+    const next = Math.min(max, Math.max(min, Number(stepped.toFixed(digits))));
+    if (next === current) {
+      return;
+    }
+    current = next;
+    paint();
+    onInput(current);
+  }
+  function point(event) {
     event.preventDefault();
     event.stopPropagation();
-    choose(item.value ?? item.angle);
+    try {
+      track.setPointerCapture(event.pointerId);
+    } catch {
+      // The pointer is only capturable for a real press.
+    }
+    setFromX(event.clientX);
+  }
+  track.addEventListener("pointerdown", point);
+  track.addEventListener("pointermove", (event) => {
+    if (!track.hasPointerCapture(event.pointerId)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    setFromX(event.clientX);
   });
-  root.append(button);
+  paint();
 }
 
-function selectSpread(next) {
-  spread = next;
-  markGroup(spreads, ".fx", "spread", next);
-}
-
-function selectSoftness(next) {
-  softness = next;
-  markGroup(softnesses, ".fx", "softness", next);
-}
-
-function paintSoftDot(dot, fade) {
-  dot.style.width = "22px";
-  dot.style.height = "22px";
-  dot.style.background =
-    fade >= 70
-      ? "#ffe24a"
-      : `radial-gradient(circle, #ffe24a ${fade}%, rgba(255, 226, 74, 0) 100%)`;
-}
-
-function selectDistance(next) {
-  distance = next;
-  markGroup(distances, ".fx", "distance", next);
-}
-
-function selectAngle(next) {
-  angle = next;
-  markGroup(positions, ".fx", "angle", next);
-}
-
-function selectHeat(next) {
-  heat = next;
-  markGroup(heats, ".fx", "heat", next);
-}
-
-function selectGrain(next) {
-  grain = next;
-  markGroup(grains, ".fx", "grain", next);
-}
-
-function paintHeatDot(dot, amount, cell) {
-  dot.style.width = "26px";
-  dot.style.height = "26px";
-  dot.style.backgroundColor = "#ffe24a";
-  dot.style.backgroundImage = `url(${heatPreview(52, "#ffe24a", amount, cell)})`;
-  dot.style.backgroundSize = "cover";
-}
-
-for (const item of SPREADS) {
-  addTune(spreads, item, "spread", selectSpread, (dot, choice) => {
-    dot.style.boxShadow = `0 0 ${choice.blur}px ${Math.round(choice.blur / 2)}px rgba(255, 226, 74, 0.95)`;
-  });
-}
-for (const item of SOFTNESS) {
-  addTune(softnesses, item, "softness", selectSoftness, (dot, choice) => {
-    paintSoftDot(dot, choice.fade);
-  });
-}
-for (const item of DISTANCES) {
-  addTune(distances, item, "distance", selectDistance, (dot, choice) => {
-    dot.style.transform = `translate(${choice.shift}px, ${choice.shift}px)`;
-  });
-}
-for (const item of POSITIONS) {
-  addTune(positions, item, "angle", selectAngle, (dot, choice) => {
-    dot.style.transform = `translate(${choice.x}px, ${choice.y}px)`;
-  });
-}
-for (const item of HEATS) {
-  addTune(heats, item, "heat", selectHeat, (dot, choice) => {
-    paintHeatDot(dot, choice.value, choice.cell);
-  });
-}
-for (const item of GRAINS) {
-  addTune(grains, item, "grain", selectGrain, (dot, choice) => {
-    paintHeatDot(dot, 1, choice.cell);
-  });
-}
+addSlider(spreads, {
+  label: "Spread",
+  min: 0.4,
+  max: 16,
+  step: 0.1,
+  value: spread,
+  digits: 1,
+  suffix: "",
+  onInput(next) {
+    spread = next;
+  },
+});
+addSlider(softnesses, {
+  label: "Stroke softness",
+  min: 0,
+  max: 1,
+  step: 0.01,
+  value: softness,
+  digits: 2,
+  suffix: "",
+  onInput(next) {
+    softness = next;
+  },
+});
+addSlider(distances, {
+  label: "Distance",
+  min: 0,
+  max: 4,
+  step: 0.01,
+  value: distance,
+  digits: 2,
+  suffix: "",
+  onInput(next) {
+    distance = next;
+  },
+});
+addSlider(positions, {
+  label: "Position",
+  min: 0,
+  max: 360,
+  step: 1,
+  value: angle,
+  digits: 0,
+  suffix: "°",
+  onInput(next) {
+    angle = next;
+  },
+});
+addSlider(heats, {
+  label: "Heat",
+  min: 0,
+  max: 1,
+  step: 0.01,
+  value: heat,
+  digits: 2,
+  suffix: "",
+  onInput(next) {
+    heat = next;
+  },
+});
+addSlider(grains, {
+  label: "Scale",
+  min: 0.02,
+  max: 0.45,
+  step: 0.01,
+  value: grain,
+  digits: 2,
+  suffix: "",
+  onInput(next) {
+    grain = next;
+  },
+});
+addSlider(heatSoftness, {
+  label: "Texture softness",
+  min: 0,
+  max: 1,
+  step: 0.01,
+  value: heatSoft,
+  digits: 2,
+  suffix: "",
+  onInput(next) {
+    heatSoft = next;
+  },
+});
 for (const item of SHADOWS) {
   addEffect(shadows, item, "shadow", selectShadow);
 }
-selectSpread(spread);
-selectSoftness(softness);
-selectDistance(distance);
-selectAngle(angle);
-selectHeat(heat);
-selectGrain(grain);
 selectShadow(shadow);
 
 function showMask(on) {
@@ -416,6 +429,7 @@ function beginStroke(pointerId, point) {
     angle,
     heat,
     grain,
+    heatSoft,
     shadow,
     x: point.x,
     y: point.y,
@@ -431,6 +445,7 @@ function beginStroke(pointerId, point) {
     angle,
     heat,
     grain,
+    heatSoft,
     shadow,
     x: point.x,
     y: point.y,

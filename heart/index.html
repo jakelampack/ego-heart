@@ -13,7 +13,7 @@
     <link rel="icon" href="css/favicon.png?v=1" type="image/png" sizes="64x64" />
     <link rel="icon" href="css/favicon.svg?v=1" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="css/app.css?v=23" />
+    <link rel="stylesheet" href="css/app.css?v=28" />
   </head>
   <body class="painter" data-local="true">
     <p class="turn" id="turn">Turn sideways to carve</p>
@@ -53,6 +53,10 @@
               <span class="tune-label">Scale</span>
               <div class="effects" id="grains"></div>
             </div>
+            <div class="tune">
+              <span class="tune-label">Softness</span>
+              <div class="effects" id="heat-soft"></div>
+            </div>
             <span class="divider" aria-hidden="true"></span>
             <div class="effects" id="shadows"></div>
             <button class="mask" id="mask" type="button" aria-pressed="false" aria-label="Heart mask">
@@ -86,6 +90,6 @@
         </button>
       </div>
     </footer>
-    <script type="module" src="js/painter.js?v=27"></script>
+    <script type="module" src="js/painter.js?v=30"></script>
   </body>
 </html>
