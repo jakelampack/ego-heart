@@ -1,0 +1,9 @@
+{
+  "name": "Ego Heart",
+  "short_name": "Ego Heart",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#000000",
+  "theme_color": "#3d2918",
+  "start_url": "."
+}

@@ -92,11 +92,17 @@ const GLOW = {
   angle: 125,
 };
 
-// The mark on the glass. These roughen the edge so it is not a perfect circle.
+// Smooth heat along the glass stroke. amount is how white the hottest parts get.
+const HEAT = {
+  amount: 0.7,
+  scale: 2.8,
+};
+
+// A slow wander so the edge is uneven without turning into spots.
 const EDGE = {
-  wobble: 0.22,
-  swell: 0.32,
-  spacing: 0.26,
+  wobble: 0.1,
+  swell: 0.16,
+  scale: 3.4,
 };
 
 function shadowInk(hex, mix) {
@@ -114,9 +120,27 @@ function glowNumber(value, fallback, low, high) {
   return Math.min(high, Math.max(low, number));
 }
 
-function edgeWander(x, y) {
-  const noise = Math.sin(x * 0.173 + y * 0.097) * 43758.5453;
+function fadeNoise(t) {
+  return t * t * (3 - 2 * t);
+}
+
+function hashNoise(index) {
+  const noise = Math.sin(index * 127.1 + 311.7) * 43758.5453;
   return noise - Math.floor(noise);
+}
+
+function noise1(t) {
+  const index = Math.floor(t);
+  const blend = fadeNoise(t - index);
+  return hashNoise(index) * (1 - blend) + hashNoise(index + 1) * blend;
+}
+
+function hotInk(hex, mix) {
+  const red = Number.parseInt(hex.slice(1, 3), 16);
+  const green = Number.parseInt(hex.slice(3, 5), 16);
+  const blue = Number.parseInt(hex.slice(5, 7), 16);
+  const lift = (channel) => Math.round(channel + (255 - channel) * mix);
+  return `rgb(${lift(red)}, ${lift(green)}, ${lift(blue)})`;
 }
 
 function strokeWidth(canvas, width) {
@@ -175,37 +199,68 @@ function createRenderer(canvas) {
     ctx.stroke();
   }
 
-  function dab(x, y, radius, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(x, y, Math.max(0.8, radius), 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function roughDab(x, y, width, color, salt) {
-    const vary = edgeWander(x + salt, y - salt);
-    const drift = edgeWander(y + salt * 3, x + salt);
-    const radius = (width / 2) * (1 - EDGE.swell * 0.5 + vary * EDGE.swell);
-    const reach = (drift - 0.5) * width * EDGE.wobble;
-    const angle = vary * Math.PI * 2;
-    dab(x + Math.cos(angle) * reach, y + Math.sin(angle) * reach, radius, color);
-  }
-
-  function drawRough(stroke, width, color) {
+  function drawGlass(stroke, width, color) {
     const points = stroke.points;
     const firstX = points[0][0] * canvas.width;
     const firstY = points[0][1] * canvas.height;
-    roughDab(firstX, firstY, width, color, 1);
-    roughDab(firstX, firstY, width * 0.72, color, 5);
     if (points.length === 1) {
+      const heat = noise1(2.4) * HEAT.amount;
+      const gradient = ctx.createRadialGradient(firstX, firstY, width * 0.08, firstX, firstY, width * 0.55);
+      gradient.addColorStop(0, hotInk(color, heat));
+      gradient.addColorStop(1, color);
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(firstX, firstY, width / 2, 0, Math.PI * 2);
+      ctx.fill();
       return;
     }
-    const step = Math.max(width * EDGE.spacing, 1.2);
-    let trail = 0;
+    const step = Math.max(width * 0.34, 1);
+    const samples = [{ x: firstX, y: firstY, d: 0 }];
+    let distance = 0;
     for (let i = 1; i < points.length; i += 1) {
-      trail = walkStamps(points[i - 1], points[i], step, trail, (x, y) => {
-        roughDab(x, y, width, color, i);
-      });
+      const x0 = points[i - 1][0] * canvas.width;
+      const y0 = points[i - 1][1] * canvas.height;
+      const x1 = points[i][0] * canvas.width;
+      const y1 = points[i][1] * canvas.height;
+      const length = Math.hypot(x1 - x0, y1 - y0);
+      if (length === 0) {
+        continue;
+      }
+      let walked = 0;
+      while (walked < length) {
+        const advance = Math.min(step, length - walked);
+        walked += advance;
+        distance += advance;
+        const t = walked / length;
+        samples.push({
+          x: x0 + (x1 - x0) * t,
+          y: y0 + (y1 - y0) * t,
+          d: distance,
+        });
+      }
+    }
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    for (let i = 1; i < samples.length; i += 1) {
+      const from = samples[i - 1];
+      const to = samples[i];
+      const heatScale = Math.max(width * HEAT.scale, 24);
+      const edgeScale = Math.max(width * EDGE.scale, 28);
+      const heat = noise1(to.d / heatScale);
+      const swell = noise1(to.d / edgeScale + 19);
+      const wander = noise1(to.d / edgeScale + 47) - 0.5;
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const length = Math.hypot(dx, dy) || 1;
+      const shift = wander * width * EDGE.wobble;
+      const offsetX = (-dy / length) * shift;
+      const offsetY = (dx / length) * shift;
+      ctx.strokeStyle = hotInk(color, heat * HEAT.amount);
+      ctx.lineWidth = width * (0.9 + swell * EDGE.swell);
+      ctx.beginPath();
+      ctx.moveTo(from.x + offsetX, from.y + offsetY);
+      ctx.lineTo(to.x + offsetX, to.y + offsetY);
+      ctx.stroke();
     }
   }
 
@@ -244,7 +299,7 @@ function createRenderer(canvas) {
     ctx.shadowBlur = width * spread * GLOW.inner;
     drawSmooth(stroke, width, stroke.color);
     clearShadow();
-    drawRough(stroke, width, stroke.color);
+    drawGlass(stroke, width, stroke.color);
     ctx.restore();
   }
 

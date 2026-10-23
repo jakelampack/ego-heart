@@ -12,9 +12,11 @@
     <title>Ego Heart</title>
     <link rel="icon" href="css/favicon.png?v=1" type="image/png" sizes="64x64" />
     <link rel="icon" href="css/favicon.svg?v=1" type="image/svg+xml" />
-    <link rel="stylesheet" href="css/app.css?v=21" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="css/app.css?v=23" />
   </head>
   <body class="painter" data-local="true">
+    <p class="turn" id="turn">Turn sideways to carve</p>
     <canvas id="canvas"></canvas>
     <p class="status" id="status" hidden>Connecting</p>
     <footer class="dock" id="dock">
@@ -71,6 +73,6 @@
         </button>
       </div>
     </footer>
-    <script type="module" src="js/painter.js?v=22"></script>
+    <script type="module" src="js/painter.js?v=23"></script>
   </body>
 </html>

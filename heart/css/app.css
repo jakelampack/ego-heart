@@ -377,3 +377,26 @@ body.display canvas {
 .status[hidden] {
   display: none;
 }
+
+.turn {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  margin: 0;
+  align-items: center;
+  justify-content: center;
+  background: #3d2918;
+  color: var(--paper);
+  font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+@media (orientation: portrait) and (max-width: 1100px) {
+  .turn {
+    display: flex;
+  }
+}

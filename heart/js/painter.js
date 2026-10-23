@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=22";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=23";
 
 const COLORS = [
   "#ffe24a",
@@ -518,3 +518,16 @@ function fit() {
 window.addEventListener("resize", fit);
 window.visualViewport?.addEventListener("resize", fit);
 fit();
+
+async function lockLandscape() {
+  try {
+    if (screen.orientation?.lock) {
+      await screen.orientation.lock("landscape");
+    }
+  } catch {
+    // A phone browser only allows this for an installed app.
+  }
+}
+
+lockLandscape();
+window.addEventListener("orientationchange", lockLandscape);
