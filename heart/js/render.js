@@ -217,25 +217,55 @@ function createRenderer(canvas) {
     return (trail + length) % step;
   }
 
+  function brushTip(x, y, radius, angle) {
+    const steps = 28;
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i += 1) {
+      const turn = (i / steps) * Math.PI * 2;
+      const nx = Math.cos(turn) * 2.6 + x * 0.02;
+      const ny = Math.sin(turn) * 2.6 + y * 0.02;
+      const lump = valueNoise(nx, ny);
+      const grit = valueNoise(nx * 3.4 + 6.2, ny * 3.4 - 2.5);
+      const outward = Math.max(0, Math.cos(turn - angle));
+      const reach = radius * (0.74 + lump * 0.38 + grit * 0.14 + outward * 0.28);
+      const px = x + Math.cos(turn) * reach;
+      const py = y + Math.sin(turn) * reach;
+      if (i === 0) {
+        ctx.moveTo(px, py);
+      } else {
+        ctx.lineTo(px, py);
+      }
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
   function drawSmooth(stroke, width, color) {
     const points = stroke.points;
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
     ctx.lineWidth = width;
-    ctx.lineCap = "round";
+    ctx.lineCap = "butt";
     ctx.lineJoin = "round";
+    const first = [points[0][0] * canvas.width, points[0][1] * canvas.height];
     if (points.length === 1) {
-      ctx.beginPath();
-      ctx.arc(points[0][0] * canvas.width, points[0][1] * canvas.height, width / 2, 0, Math.PI * 2);
-      ctx.fill();
+      brushTip(first[0], first[1], width / 2, 0);
       return;
     }
+    const last = [points[points.length - 1][0] * canvas.width, points[points.length - 1][1] * canvas.height];
+    const after = [points[1][0] * canvas.width, points[1][1] * canvas.height];
+    const before = [
+      points[points.length - 2][0] * canvas.width,
+      points[points.length - 2][1] * canvas.height,
+    ];
     ctx.beginPath();
-    ctx.moveTo(points[0][0] * canvas.width, points[0][1] * canvas.height);
+    ctx.moveTo(first[0], first[1]);
     for (let i = 1; i < points.length; i += 1) {
       ctx.lineTo(points[i][0] * canvas.width, points[i][1] * canvas.height);
     }
     ctx.stroke();
+    brushTip(first[0], first[1], width / 2, Math.atan2(first[1] - after[1], first[0] - after[0]));
+    brushTip(last[0], last[1], width / 2, Math.atan2(last[1] - before[1], last[0] - before[0]));
   }
 
   function drawShifted(stroke, width, color) {

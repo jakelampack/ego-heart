@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=33";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=34";
 
 const COLORS = [
   "#ffe24a",
