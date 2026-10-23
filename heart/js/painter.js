@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=23";
+import { applyMessage, connectSocket, createRenderer, heatPreview } from "./render.js?v=24";
 
 const COLORS = [
   "#ffe24a",
@@ -39,6 +39,18 @@ const POSITIONS = [
   { angle: 270, label: "Glow above", x: 0, y: -6 },
 ];
 
+const HEATS = [
+  { value: 0, label: "Solid color", cell: 14 },
+  { value: 0.62, label: "Warm", cell: 14 },
+  { value: 1, label: "White hot", cell: 14 },
+];
+
+const GRAINS = [
+  { value: 0.045, label: "Fine texture", cell: 7 },
+  { value: 0.11, label: "Medium texture", cell: 14 },
+  { value: 0.22, label: "Broad texture", cell: 24 },
+];
+
 const MIN_SPACING = 0.001;
 
 const canvas = document.querySelector("#canvas");
@@ -47,6 +59,8 @@ const sizes = document.querySelector("#sizes");
 const spreads = document.querySelector("#spreads");
 const distances = document.querySelector("#distances");
 const positions = document.querySelector("#positions");
+const heats = document.querySelector("#heats");
+const grains = document.querySelector("#grains");
 const shadows = document.querySelector("#shadows");
 const dock = document.querySelector("#dock");
 const toolsToggle = document.querySelector("#tools-toggle");
@@ -66,6 +80,8 @@ let width = SIZES[2].width;
 let spread = SPREADS[1].value;
 let distance = DISTANCES[1].value;
 let angle = POSITIONS[1].angle;
+let heat = HEATS[1].value;
+let grain = GRAINS[1].value;
 let shadow = 0;
 let active = null;
 
@@ -227,6 +243,24 @@ function selectAngle(next) {
   markGroup(positions, ".fx", "angle", next);
 }
 
+function selectHeat(next) {
+  heat = next;
+  markGroup(heats, ".fx", "heat", next);
+}
+
+function selectGrain(next) {
+  grain = next;
+  markGroup(grains, ".fx", "grain", next);
+}
+
+function paintHeatDot(dot, amount, cell) {
+  dot.style.width = "26px";
+  dot.style.height = "26px";
+  dot.style.backgroundColor = "#ffe24a";
+  dot.style.backgroundImage = `url(${heatPreview(52, "#ffe24a", amount, cell)})`;
+  dot.style.backgroundSize = "cover";
+}
+
 for (const item of SPREADS) {
   addTune(spreads, item, "spread", selectSpread, (dot, choice) => {
     dot.style.boxShadow = `0 0 ${choice.blur}px ${Math.round(choice.blur / 2)}px rgba(255, 226, 74, 0.95)`;
@@ -242,12 +276,24 @@ for (const item of POSITIONS) {
     dot.style.transform = `translate(${choice.x}px, ${choice.y}px)`;
   });
 }
+for (const item of HEATS) {
+  addTune(heats, item, "heat", selectHeat, (dot, choice) => {
+    paintHeatDot(dot, choice.value, choice.cell);
+  });
+}
+for (const item of GRAINS) {
+  addTune(grains, item, "grain", selectGrain, (dot, choice) => {
+    paintHeatDot(dot, 1, choice.cell);
+  });
+}
 for (const item of SHADOWS) {
   addEffect(shadows, item, "shadow", selectShadow);
 }
 selectSpread(spread);
 selectDistance(distance);
 selectAngle(angle);
+selectHeat(heat);
+selectGrain(grain);
 selectShadow(shadow);
 
 function showMask(on) {
@@ -332,8 +378,33 @@ function beginStroke(pointerId, point) {
   }
   const id = newStrokeId();
   active = { id, pointerId, last: point };
-  renderer.begin({ id, color, width, spread, distance, angle, shadow, x: point.x, y: point.y });
-  socket.send({ type: "begin", id, color, width, spread, distance, angle, shadow, x: point.x, y: point.y });
+  renderer.begin({
+    id,
+    color,
+    width,
+    spread,
+    distance,
+    angle,
+    heat,
+    grain,
+    shadow,
+    x: point.x,
+    y: point.y,
+  });
+  socket.send({
+    type: "begin",
+    id,
+    color,
+    width,
+    spread,
+    distance,
+    angle,
+    heat,
+    grain,
+    shadow,
+    x: point.x,
+    y: point.y,
+  });
   if (!local) {
     showHistory(true, false);
   }
