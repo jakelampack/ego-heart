@@ -1,15 +1,15 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=17";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=19";
 
 const COLORS = [
+  "#ffe24a",
+  "#ff4f8b",
+  "#ff7a18",
+  "#3dffe4",
+  "#6aa7ff",
+  "#c86bff",
   "#ffffff",
-  "#1c1915",
-  "#c4382b",
-  "#e06a1f",
-  "#e2b31c",
-  "#2f7d4a",
-  "#1f5fbf",
-  "#6a3d98",
-  "#d45b86",
+  "#ff3b30",
+  "#7dff6a",
 ];
 
 const SIZES = [
@@ -51,6 +51,8 @@ const sizes = document.querySelector("#sizes");
 const brushes = document.querySelector("#brushes");
 const glows = document.querySelector("#glows");
 const shadows = document.querySelector("#shadows");
+const dock = document.querySelector("#dock");
+const toolsToggle = document.querySelector("#tools-toggle");
 const maskButton = document.querySelector("#mask");
 const undoButton = document.querySelector("#undo");
 const redoButton = document.querySelector("#redo");
@@ -65,7 +67,7 @@ const HISTORY = 80;
 let color = COLORS[0];
 let width = SIZES[2].width;
 let brush = BRUSHES[0].id;
-let glow = 0;
+let glow = 2;
 let shadow = 0;
 let active = null;
 
@@ -177,7 +179,7 @@ selectBrush(brush);
 const GLOWS = [
   { level: 0, label: "No glow", glow: "none" },
   { level: 1, label: "Small glow", glow: "0 0 6px 2px rgba(243, 239, 230, 0.95)" },
-  { level: 2, label: "Big glow", glow: "0 0 14px 7px rgba(243, 239, 230, 1)" },
+  { level: 2, label: "Big glow", glow: "0 0 16px 8px rgba(255, 226, 74, 0.95)" },
 ];
 
 const SHADOWS = [
@@ -475,6 +477,14 @@ redoButton.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   event.stopPropagation();
   historyStep("redo");
+});
+
+toolsToggle.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  const open = dock.classList.toggle("open");
+  toolsToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  toolsToggle.setAttribute("aria-label", open ? "Hide tools" : "Show tools");
 });
 
 erase.addEventListener("click", () => {

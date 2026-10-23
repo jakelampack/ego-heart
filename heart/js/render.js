@@ -83,11 +83,29 @@ function level(value) {
   return number === 1 || number === 2 ? number : 0;
 }
 
+// Neon tube. halo and mid are blur distances as a multiple of the stroke width.
+// coreMix lifts the center toward white. coreScale is the bright center's thickness.
+const NEON = {
+  halo: [0, 3.4, 7.2],
+  mid: [0, 1.15, 2.2],
+  tubeMix: 0.18,
+  coreMix: 0.9,
+  coreScale: 0.28,
+};
+
 function shadowInk(hex, mix) {
   const red = Number.parseInt(hex.slice(1, 3), 16);
   const green = Number.parseInt(hex.slice(3, 5), 16);
   const blue = Number.parseInt(hex.slice(5, 7), 16);
   return `rgba(${Math.round(red * mix)}, ${Math.round(green * mix)}, ${Math.round(blue * mix)}, 0.92)`;
+}
+
+function hotInk(hex, mix) {
+  const red = Number.parseInt(hex.slice(1, 3), 16);
+  const green = Number.parseInt(hex.slice(3, 5), 16);
+  const blue = Number.parseInt(hex.slice(5, 7), 16);
+  const lift = (channel) => Math.round(channel + (255 - channel) * mix);
+  return `rgb(${lift(red)}, ${lift(green)}, ${lift(blue)})`;
 }
 
 function strokeWidth(canvas, width) {
@@ -125,21 +143,21 @@ function createRenderer(canvas) {
     return (trail + length) % step;
   }
 
-  function drawInk(stroke, width, brush) {
+  function drawInk(stroke, width, brush, color = stroke.color) {
     const points = stroke.points;
     if (brush !== "circle") {
-      placeStamp(brush, points[0][0] * canvas.width, points[0][1] * canvas.height, width, stroke.color);
+      placeStamp(brush, points[0][0] * canvas.width, points[0][1] * canvas.height, width, color);
       const step = Math.max(width * 0.85, 1);
       let trail = 0;
       for (let i = 1; i < points.length; i += 1) {
         trail = walkStamps(points[i - 1], points[i], step, trail, (x, y) => {
-          placeStamp(brush, x, y, width, stroke.color);
+          placeStamp(brush, x, y, width, color);
         });
       }
       return;
     }
-    ctx.fillStyle = stroke.color;
-    ctx.strokeStyle = stroke.color;
+    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
     ctx.lineWidth = width;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -188,18 +206,21 @@ function createRenderer(canvas) {
       clearShadow();
     }
     if (glow) {
-      const spread = glow === 1 ? 1.15 : 2.15;
       ctx.shadowColor = stroke.color;
-      ctx.shadowBlur = width * spread;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 0;
+      ctx.shadowBlur = width * NEON.halo[glow];
       paint();
-      ctx.shadowBlur = width * spread * 0.42;
+      ctx.shadowBlur = width * NEON.halo[glow] * 0.5;
+      paint();
+      ctx.shadowBlur = width * NEON.mid[glow];
       paint();
       clearShadow();
+      drawInk(stroke, width, brush, hotInk(stroke.color, NEON.tubeMix));
+      drawInk(stroke, width * NEON.coreScale, brush, hotInk(stroke.color, NEON.coreMix));
+    } else {
+      paint();
     }
-    clearShadow();
-    paint();
     ctx.restore();
   }
 
