@@ -12,7 +12,7 @@
     <title>Ego Heart</title>
     <link rel="icon" href="css/favicon.png?v=1" type="image/png" sizes="64x64" />
     <link rel="icon" href="css/favicon.svg?v=1" type="image/svg+xml" />
-    <link rel="stylesheet" href="css/app.css?v=18" />
+    <link rel="stylesheet" href="css/app.css?v=21" />
   </head>
   <body class="painter" data-local="true">
     <canvas id="canvas"></canvas>
@@ -25,9 +25,19 @@
             <span class="divider" aria-hidden="true"></span>
             <div class="sizes" id="sizes"></div>
             <span class="divider" aria-hidden="true"></span>
-            <div class="brushes" id="brushes"></div>
             <span class="divider" aria-hidden="true"></span>
-            <div class="effects" id="glows"></div>
+            <div class="tune">
+              <span class="tune-label">Spread</span>
+              <div class="effects" id="spreads"></div>
+            </div>
+            <div class="tune">
+              <span class="tune-label">Distance</span>
+              <div class="effects" id="distances"></div>
+            </div>
+            <div class="tune">
+              <span class="tune-label">Position</span>
+              <div class="effects" id="positions"></div>
+            </div>
             <span class="divider" aria-hidden="true"></span>
             <div class="effects" id="shadows"></div>
             <button class="mask" id="mask" type="button" aria-pressed="false" aria-label="Heart mask">
@@ -61,6 +71,6 @@
         </button>
       </div>
     </footer>
-    <script type="module" src="js/painter.js?v=20"></script>
+    <script type="module" src="js/painter.js?v=22"></script>
   </body>
 </html>

@@ -199,6 +199,23 @@ body.display canvas {
   box-shadow: 0 0 0 3px var(--bar), 0 0 0 6px var(--paper);
 }
 
+.tune {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.tune-label {
+  color: rgba(243, 239, 230, 0.72);
+  font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .effects {
   display: flex;
   align-items: center;

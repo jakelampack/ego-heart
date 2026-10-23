@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=20";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=22";
 
 const COLORS = [
   "#ffe24a",
@@ -20,27 +20,23 @@ const SIZES = [
   { width: 0.058, dot: 52, label: "Largest brush" },
 ];
 
-const BRUSHES = [
-  {
-    id: "circle",
-    label: "Circle brush",
-    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" fill="currentColor"/></svg>',
-  },
-  {
-    id: "star",
-    label: "Star brush",
-    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.2 14.7 8.4 21.4 9.1 16.3 13.6 17.8 20.2 12 16.8 6.2 20.2 7.7 13.6 2.6 9.1 9.3 8.4z"/></svg>',
-  },
-  {
-    id: "diamond",
-    label: "Diamond brush",
-    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.4 21.2 12 12 21.6 2.8 12z"/></svg>',
-  },
-  {
-    id: "triangle",
-    label: "Triangle brush",
-    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3.2 21.4 20.4H2.6z"/></svg>',
-  },
+const SPREADS = [
+  { value: 3.2, label: "Tight spread", blur: 5 },
+  { value: 6.4, label: "Medium spread", blur: 11 },
+  { value: 10, label: "Wide spread", blur: 18 },
+];
+
+const DISTANCES = [
+  { value: 0.6, label: "Close to the stroke", shift: 3 },
+  { value: 1.8, label: "Glass distance", shift: 7 },
+  { value: 3.2, label: "Far from the stroke", shift: 12 },
+];
+
+const POSITIONS = [
+  { angle: 90, label: "Glow below", x: 0, y: 6 },
+  { angle: 125, label: "Glow down and right", x: 5, y: 5 },
+  { angle: 200, label: "Glow down and left", x: -5, y: 4 },
+  { angle: 270, label: "Glow above", x: 0, y: -6 },
 ];
 
 const MIN_SPACING = 0.001;
@@ -48,8 +44,9 @@ const MIN_SPACING = 0.001;
 const canvas = document.querySelector("#canvas");
 const swatches = document.querySelector("#swatches");
 const sizes = document.querySelector("#sizes");
-const brushes = document.querySelector("#brushes");
-const glows = document.querySelector("#glows");
+const spreads = document.querySelector("#spreads");
+const distances = document.querySelector("#distances");
+const positions = document.querySelector("#positions");
 const shadows = document.querySelector("#shadows");
 const dock = document.querySelector("#dock");
 const toolsToggle = document.querySelector("#tools-toggle");
@@ -66,8 +63,9 @@ const HISTORY = 80;
 
 let color = COLORS[0];
 let width = SIZES[2].width;
-let brush = BRUSHES[0].id;
-let glow = 2;
+let spread = SPREADS[1].value;
+let distance = DISTANCES[1].value;
+let angle = POSITIONS[1].angle;
 let shadow = 0;
 let active = null;
 
@@ -151,37 +149,6 @@ for (const size of SIZES) {
 }
 selectSize(width);
 
-function selectBrush(next) {
-  brush = next;
-  for (const button of brushes.querySelectorAll(".brush")) {
-    const selected = button.dataset.brush === next;
-    button.setAttribute("aria-pressed", selected ? "true" : "false");
-    button.style.boxShadow = selected ? "0 0 0 3px #241f1a, 0 0 0 6px #f3efe6" : "none";
-  }
-}
-
-for (const item of BRUSHES) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "brush";
-  button.dataset.brush = item.id;
-  button.setAttribute("aria-label", item.label);
-  button.innerHTML = item.icon;
-  button.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    selectBrush(item.id);
-  });
-  brushes.append(button);
-}
-selectBrush(brush);
-
-const GLOWS = [
-  { level: 0, label: "No glow", glow: "none" },
-  { level: 1, label: "Small glow", glow: "0 0 6px 2px rgba(243, 239, 230, 0.95)" },
-  { level: 2, label: "Big glow", glow: "0 0 16px 8px rgba(255, 226, 74, 0.95)" },
-];
-
 const SHADOWS = [
   { level: 0, label: "No drop shadow", x: 0, blur: 0 },
   { level: 1, label: "Small drop shadow", x: 3, blur: 1.5 },
@@ -222,23 +189,65 @@ function addEffect(root, item, key, choose) {
   root.append(button);
 }
 
-function selectGlow(next) {
-  glow = next;
-  markGroup(glows, ".fx", "glow", next);
-}
-
 function selectShadow(next) {
   shadow = next;
   markGroup(shadows, ".fx", "shadow", next);
 }
 
-for (const item of GLOWS) {
-  addEffect(glows, item, "glow", selectGlow);
+function addTune(root, item, key, choose, paint) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "fx";
+  button.dataset[key] = String(item.value ?? item.angle);
+  button.setAttribute("aria-label", item.label);
+  const dot = document.createElement("span");
+  dot.className = "fx-dot";
+  paint(dot, item);
+  button.append(dot);
+  button.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    choose(item.value ?? item.angle);
+  });
+  root.append(button);
+}
+
+function selectSpread(next) {
+  spread = next;
+  markGroup(spreads, ".fx", "spread", next);
+}
+
+function selectDistance(next) {
+  distance = next;
+  markGroup(distances, ".fx", "distance", next);
+}
+
+function selectAngle(next) {
+  angle = next;
+  markGroup(positions, ".fx", "angle", next);
+}
+
+for (const item of SPREADS) {
+  addTune(spreads, item, "spread", selectSpread, (dot, choice) => {
+    dot.style.boxShadow = `0 0 ${choice.blur}px ${Math.round(choice.blur / 2)}px rgba(255, 226, 74, 0.95)`;
+  });
+}
+for (const item of DISTANCES) {
+  addTune(distances, item, "distance", selectDistance, (dot, choice) => {
+    dot.style.transform = `translate(${choice.shift}px, ${choice.shift}px)`;
+  });
+}
+for (const item of POSITIONS) {
+  addTune(positions, item, "angle", selectAngle, (dot, choice) => {
+    dot.style.transform = `translate(${choice.x}px, ${choice.y}px)`;
+  });
 }
 for (const item of SHADOWS) {
   addEffect(shadows, item, "shadow", selectShadow);
 }
-selectGlow(glow);
+selectSpread(spread);
+selectDistance(distance);
+selectAngle(angle);
 selectShadow(shadow);
 
 function showMask(on) {
@@ -323,8 +332,8 @@ function beginStroke(pointerId, point) {
   }
   const id = newStrokeId();
   active = { id, pointerId, last: point };
-  renderer.begin({ id, color, width, brush, glow, shadow, x: point.x, y: point.y });
-  socket.send({ type: "begin", id, color, width, brush, glow, shadow, x: point.x, y: point.y });
+  renderer.begin({ id, color, width, spread, distance, angle, shadow, x: point.x, y: point.y });
+  socket.send({ type: "begin", id, color, width, spread, distance, angle, shadow, x: point.x, y: point.y });
   if (!local) {
     showHistory(true, false);
   }

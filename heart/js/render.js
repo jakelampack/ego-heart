@@ -83,10 +83,20 @@ function level(value) {
   return number === 1 || number === 2 ? number : 0;
 }
 
-// Neon halo. Distances are multiples of the stroke width. The stroke itself stays the chosen color.
-const NEON = {
-  halo: [0, 3.4, 7.2],
-  mid: [0, 1.15, 2.2],
+// Light on the bark behind the glass. Distances are multiples of the stroke width.
+// angle: 0 is right, 90 is down.
+const GLOW = {
+  spread: 7.2,
+  inner: 0.28,
+  distance: 1.8,
+  angle: 125,
+};
+
+// The mark on the glass. These roughen the edge so it is not a perfect circle.
+const EDGE = {
+  wobble: 0.22,
+  swell: 0.32,
+  spacing: 0.26,
 };
 
 function shadowInk(hex, mix) {
@@ -94,6 +104,19 @@ function shadowInk(hex, mix) {
   const green = Number.parseInt(hex.slice(3, 5), 16);
   const blue = Number.parseInt(hex.slice(5, 7), 16);
   return `rgba(${Math.round(red * mix)}, ${Math.round(green * mix)}, ${Math.round(blue * mix)}, 0.92)`;
+}
+
+function glowNumber(value, fallback, low, high) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return fallback;
+  }
+  return Math.min(high, Math.max(low, number));
+}
+
+function edgeWander(x, y) {
+  const noise = Math.sin(x * 0.173 + y * 0.097) * 43758.5453;
+  return noise - Math.floor(noise);
 }
 
 function strokeWidth(canvas, width) {
@@ -131,19 +154,8 @@ function createRenderer(canvas) {
     return (trail + length) % step;
   }
 
-  function drawInk(stroke, width, brush, color = stroke.color) {
+  function drawSmooth(stroke, width, color) {
     const points = stroke.points;
-    if (brush !== "circle") {
-      placeStamp(brush, points[0][0] * canvas.width, points[0][1] * canvas.height, width, color);
-      const step = Math.max(width * 0.85, 1);
-      let trail = 0;
-      for (let i = 1; i < points.length; i += 1) {
-        trail = walkStamps(points[i - 1], points[i], step, trail, (x, y) => {
-          placeStamp(brush, x, y, width, color);
-        });
-      }
-      return;
-    }
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
     ctx.lineWidth = width;
@@ -163,20 +175,51 @@ function createRenderer(canvas) {
     ctx.stroke();
   }
 
+  function dab(x, y, radius, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(0.8, radius), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function roughDab(x, y, width, color, salt) {
+    const vary = edgeWander(x + salt, y - salt);
+    const drift = edgeWander(y + salt * 3, x + salt);
+    const radius = (width / 2) * (1 - EDGE.swell * 0.5 + vary * EDGE.swell);
+    const reach = (drift - 0.5) * width * EDGE.wobble;
+    const angle = vary * Math.PI * 2;
+    dab(x + Math.cos(angle) * reach, y + Math.sin(angle) * reach, radius, color);
+  }
+
+  function drawRough(stroke, width, color) {
+    const points = stroke.points;
+    const firstX = points[0][0] * canvas.width;
+    const firstY = points[0][1] * canvas.height;
+    roughDab(firstX, firstY, width, color, 1);
+    roughDab(firstX, firstY, width * 0.72, color, 5);
+    if (points.length === 1) {
+      return;
+    }
+    const step = Math.max(width * EDGE.spacing, 1.2);
+    let trail = 0;
+    for (let i = 1; i < points.length; i += 1) {
+      trail = walkStamps(points[i - 1], points[i], step, trail, (x, y) => {
+        roughDab(x, y, width, color, i);
+      });
+    }
+  }
+
   function drawStroke(stroke) {
     const points = stroke.points;
     if (points.length === 0) {
       return;
     }
     const width = strokeWidth(canvas, stroke.width);
-    const brush = brushName(stroke.brush);
-    const glow = level(stroke.glow);
     const shadow = level(stroke.shadow);
-    const paint = () => drawInk(stroke, width, brush);
-    if (!glow && !shadow) {
-      paint();
-      return;
-    }
+    const spread = glowNumber(stroke.spread, GLOW.spread, 0.4, 16);
+    const distance = glowNumber(stroke.distance, GLOW.distance, 0, 4);
+    const angle = glowNumber(stroke.angle, GLOW.angle, 0, 360);
+    const radians = (angle * Math.PI) / 180;
     ctx.save();
     const clearShadow = () => {
       ctx.shadowColor = "rgba(0, 0, 0, 0)";
@@ -190,24 +233,18 @@ function createRenderer(canvas) {
       ctx.shadowBlur = width * (shadow === 1 ? 0.1 : 0.18);
       ctx.shadowOffsetX = offset;
       ctx.shadowOffsetY = offset * 1.15;
-      paint();
+      drawSmooth(stroke, width, stroke.color);
       clearShadow();
     }
-    if (glow) {
-      ctx.shadowColor = stroke.color;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-      ctx.shadowBlur = width * NEON.halo[glow];
-      paint();
-      ctx.shadowBlur = width * NEON.halo[glow] * 0.5;
-      paint();
-      ctx.shadowBlur = width * NEON.mid[glow];
-      paint();
-      clearShadow();
-      paint();
-    } else {
-      paint();
-    }
+    ctx.shadowColor = stroke.color;
+    ctx.shadowBlur = width * spread;
+    ctx.shadowOffsetX = Math.cos(radians) * width * distance;
+    ctx.shadowOffsetY = Math.sin(radians) * width * distance;
+    drawSmooth(stroke, width, stroke.color);
+    ctx.shadowBlur = width * spread * GLOW.inner;
+    drawSmooth(stroke, width, stroke.color);
+    clearShadow();
+    drawRough(stroke, width, stroke.color);
     ctx.restore();
   }
 
@@ -309,8 +346,9 @@ function createRenderer(canvas) {
           id: stroke.id,
           color: stroke.color,
           width: stroke.width,
-          brush: brushName(stroke.brush),
-          glow: level(stroke.glow),
+          spread: glowNumber(stroke.spread, GLOW.spread, 0.4, 16),
+          distance: glowNumber(stroke.distance, GLOW.distance, 0, 4),
+          angle: glowNumber(stroke.angle, GLOW.angle, 0, 360),
           shadow: level(stroke.shadow),
           points: stroke.points.map((point) => [point[0], point[1]]),
         });
@@ -326,33 +364,24 @@ function createRenderer(canvas) {
         id: stroke.id,
         color: stroke.color,
         width: stroke.width,
-        brush: brushName(stroke.brush),
-        glow: level(stroke.glow),
+        spread: glowNumber(stroke.spread, GLOW.spread, 0.4, 16),
+        distance: glowNumber(stroke.distance, GLOW.distance, 0, 4),
+        angle: glowNumber(stroke.angle, GLOW.angle, 0, 360),
         shadow: level(stroke.shadow),
         trail: 0,
         points: [[stroke.x, stroke.y]],
       };
       strokes.set(stroke.id, stored);
       order.push(stroke.id);
-      if (stored.glow || stored.shadow) {
-        redraw();
-        return;
-      }
-      paintDot(stored);
+      redraw();
     },
     point(id, x, y) {
       const stroke = strokes.get(id);
       if (!stroke) {
         return;
       }
-      const previous = stroke.points[stroke.points.length - 1];
-      const next = [x, y];
-      stroke.points.push(next);
-      if (stroke.glow || stroke.shadow) {
-        redraw();
-        return;
-      }
-      paintSegment(stroke, previous, next);
+      stroke.points.push([x, y]);
+      redraw();
     },
     clear() {
       strokes.clear();
@@ -366,8 +395,9 @@ function createRenderer(canvas) {
           id: stroke.id,
           color: stroke.color,
           width: stroke.width,
-          brush: stroke.brush,
-          glow: stroke.glow,
+          spread: stroke.spread,
+          distance: stroke.distance,
+          angle: stroke.angle,
           shadow: stroke.shadow,
           points: stroke.points.map((point) => [point[0], point[1]]),
         };
