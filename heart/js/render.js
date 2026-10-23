@@ -91,6 +91,7 @@ const GLOW = {
   distance: 0.6,
   angle: 90,
   softness: 0.75,
+  edge: 1,
   bloom: 5,
 };
 
@@ -217,9 +218,15 @@ function createRenderer(canvas) {
     return (trail + length) % step;
   }
 
-  function brushTip(x, y, radius, angle) {
-    const steps = 28;
+  function brushTip(x, y, radius, angle, edge) {
+    const amount = Math.min(2, Math.max(0, Number.isFinite(edge) ? edge : 1));
     ctx.beginPath();
+    if (amount <= 0.001) {
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    const steps = 28;
     for (let i = 0; i <= steps; i += 1) {
       const turn = (i / steps) * Math.PI * 2;
       const nx = Math.cos(turn) * 2.6 + x * 0.02;
@@ -227,7 +234,8 @@ function createRenderer(canvas) {
       const lump = valueNoise(nx, ny);
       const grit = valueNoise(nx * 3.4 + 6.2, ny * 3.4 - 2.5);
       const outward = Math.max(0, Math.cos(turn - angle));
-      const reach = radius * (0.74 + lump * 0.38 + grit * 0.14 + outward * 0.28);
+      const rough = radius * (0.74 + lump * 0.38 + grit * 0.14 + outward * 0.28);
+      const reach = radius + (rough - radius) * amount;
       const px = x + Math.cos(turn) * reach;
       const py = y + Math.sin(turn) * reach;
       if (i === 0) {
@@ -247,9 +255,10 @@ function createRenderer(canvas) {
     ctx.lineWidth = width;
     ctx.lineCap = "butt";
     ctx.lineJoin = "round";
+    const edge = glowNumber(stroke.edge, GLOW.edge, 0, 2);
     const first = [points[0][0] * canvas.width, points[0][1] * canvas.height];
     if (points.length === 1) {
-      brushTip(first[0], first[1], width / 2, 0);
+      brushTip(first[0], first[1], width / 2, 0, edge);
       return;
     }
     const last = [points[points.length - 1][0] * canvas.width, points[points.length - 1][1] * canvas.height];
@@ -264,8 +273,8 @@ function createRenderer(canvas) {
       ctx.lineTo(points[i][0] * canvas.width, points[i][1] * canvas.height);
     }
     ctx.stroke();
-    brushTip(first[0], first[1], width / 2, Math.atan2(first[1] - after[1], first[0] - after[0]));
-    brushTip(last[0], last[1], width / 2, Math.atan2(last[1] - before[1], last[0] - before[0]));
+    brushTip(first[0], first[1], width / 2, Math.atan2(first[1] - after[1], first[0] - after[0]), edge);
+    brushTip(last[0], last[1], width / 2, Math.atan2(last[1] - before[1], last[0] - before[0]), edge);
   }
 
   function drawShifted(stroke, width, color) {
@@ -493,6 +502,7 @@ function createRenderer(canvas) {
           heat: glowNumber(stroke.heat, HEAT.amount, 0, 1),
           grain: glowNumber(stroke.grain, HEAT.grain, 0.02, 0.45),
           softness: glowNumber(stroke.softness, GLOW.softness, 0, 1),
+          edge: glowNumber(stroke.edge, GLOW.edge, 0, 2),
           bloom: glowNumber(stroke.bloom, GLOW.bloom, 0, 16),
           heatSoft: glowNumber(stroke.heatSoft, HEAT.softness, 0, 1),
           shadow: level(stroke.shadow),
@@ -516,6 +526,7 @@ function createRenderer(canvas) {
         heat: glowNumber(stroke.heat, HEAT.amount, 0, 1),
         grain: glowNumber(stroke.grain, HEAT.grain, 0.02, 0.45),
         softness: glowNumber(stroke.softness, GLOW.softness, 0, 1),
+        edge: glowNumber(stroke.edge, GLOW.edge, 0, 2),
         bloom: glowNumber(stroke.bloom, GLOW.bloom, 0, 16),
         heatSoft: glowNumber(stroke.heatSoft, HEAT.softness, 0, 1),
         shadow: level(stroke.shadow),
@@ -552,6 +563,7 @@ function createRenderer(canvas) {
           heat: stroke.heat,
           grain: stroke.grain,
           softness: stroke.softness,
+          edge: stroke.edge,
           bloom: stroke.bloom,
           heatSoft: stroke.heatSoft,
           shadow: stroke.shadow,
@@ -573,6 +585,7 @@ function createRenderer(canvas) {
         stroke.heat = glowNumber(look.heat, HEAT.amount, 0, 1);
         stroke.grain = glowNumber(look.grain, HEAT.grain, 0.02, 0.45);
         stroke.softness = glowNumber(look.softness, GLOW.softness, 0, 1);
+        stroke.edge = glowNumber(look.edge, GLOW.edge, 0, 2);
         stroke.bloom = glowNumber(look.bloom, GLOW.bloom, 0, 16);
         stroke.heatSoft = glowNumber(look.heatSoft, HEAT.softness, 0, 1);
         stroke.shadow = level(look.shadow);

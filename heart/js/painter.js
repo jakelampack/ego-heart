@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=36";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=41";
 
 const COLORS = [
   "#ffe24a",
@@ -28,6 +28,7 @@ const sizes = document.querySelector("#sizes");
 const spreads = document.querySelector("#spreads");
 const blooms = document.querySelector("#blooms");
 const softnesses = document.querySelector("#softness");
+const edges = document.querySelector("#edges");
 const distances = document.querySelector("#distances");
 const positions = document.querySelector("#positions");
 const heats = document.querySelector("#heats");
@@ -52,6 +53,7 @@ let width = SIZES[1].width;
 let spread = 6.4;
 let bloom = 5;
 let softness = 0.75;
+let edge = 1;
 let distance = 0.6;
 let angle = 90;
 let heat = 0.85;
@@ -349,6 +351,19 @@ addSlider(softnesses, {
     paintLook();
   },
 });
+addSlider(edges, {
+  label: "Edge",
+  min: 0,
+  max: 2,
+  step: 0.01,
+  value: edge,
+  digits: 2,
+  suffix: "",
+  onInput(next) {
+    edge = next;
+    paintLook();
+  },
+});
 addSlider(distances, {
   label: "Distance",
   min: 0,
@@ -420,7 +435,7 @@ for (const item of SHADOWS) {
 selectShadow(shadow, false);
 
 function currentLook() {
-  return { color, width, spread, bloom, softness, distance, angle, heat, grain, heatSoft, shadow };
+  return { color, width, spread, bloom, softness, edge, distance, angle, heat, grain, heatSoft, shadow };
 }
 
 function paintLook() {
@@ -525,6 +540,7 @@ function beginStroke(pointerId, point) {
     spread,
     bloom,
     softness,
+    edge,
     distance,
     angle,
     heat,
@@ -542,6 +558,7 @@ function beginStroke(pointerId, point) {
     spread,
     bloom,
     softness,
+    edge,
     distance,
     angle,
     heat,
