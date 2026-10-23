@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer, heatPreview } from "./render.js?v=24";
+import { applyMessage, connectSocket, createRenderer, heatPreview } from "./render.js?v=25";
 
 const COLORS = [
   "#ffe24a",
@@ -75,11 +75,11 @@ const undoStack = [];
 const redoStack = [];
 const HISTORY = 80;
 
-let color = COLORS[0];
-let width = SIZES[2].width;
+let color = COLORS[COLORS.length - 1];
+let width = SIZES[1].width;
 let spread = SPREADS[1].value;
-let distance = DISTANCES[1].value;
-let angle = POSITIONS[1].angle;
+let distance = DISTANCES[0].value;
+let angle = POSITIONS[0].angle;
 let heat = HEATS[1].value;
 let grain = GRAINS[1].value;
 let shadow = 0;

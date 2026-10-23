@@ -26,7 +26,7 @@ function traceHeart(ctx, width, height) {
   ctx.closePath();
 }
 
-const DEFAULT_WIDTH = 0.016;
+const DEFAULT_WIDTH = 0.012;
 const BRUSHES = new Set(["circle", "star", "diamond", "triangle"]);
 
 function brushName(value) {
@@ -86,10 +86,10 @@ function level(value) {
 // Light on the bark behind the glass. Distances are multiples of the stroke width.
 // angle: 0 is right, 90 is down.
 const GLOW = {
-  spread: 7.2,
+  spread: 6.4,
   inner: 0.28,
-  distance: 1.8,
-  angle: 125,
+  distance: 0.6,
+  angle: 90,
 };
 
 // Color texture on the stroke. amount is how white the hottest parts get.
