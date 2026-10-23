@@ -1,4 +1,4 @@
-import { applyMessage, connectSocket, createRenderer } from "./render.js?v=30";
+import { applyMessage, connectSocket, createRenderer } from "./render.js?v=31";
 
 const COLORS = [
   "#ffe24a",
@@ -85,6 +85,7 @@ function selectColor(next) {
   for (const button of swatches.querySelectorAll(".swatch")) {
     button.setAttribute("aria-pressed", button.dataset.color === next ? "true" : "false");
   }
+  paintLook();
 }
 
 for (const value of COLORS) {
@@ -104,7 +105,7 @@ for (const value of COLORS) {
   swatches.append(button);
 }
 
-function selectSize(next) {
+function selectSize(next, paint = true) {
   width = next;
   for (const button of sizes.querySelectorAll(".size")) {
     const selected = Number(button.dataset.width) === next;
@@ -112,6 +113,9 @@ function selectSize(next) {
     button.style.boxShadow = selected
       ? "0 0 0 3px #241f1a, 0 0 0 6px #f3efe6"
       : "inset 0 0 0 1px rgba(243, 239, 230, 0.45)";
+  }
+  if (paint) {
+    paintLook();
   }
 }
 
@@ -136,7 +140,7 @@ for (const size of SIZES) {
   });
   sizes.append(button);
 }
-selectSize(width);
+selectSize(width, false);
 
 const SHADOWS = [
   { level: 0, label: "No drop shadow", x: 0, blur: 0 },
@@ -178,9 +182,12 @@ function addEffect(root, item, key, choose) {
   root.append(button);
 }
 
-function selectShadow(next) {
+function selectShadow(next, paint = true) {
   shadow = next;
   markGroup(shadows, ".fx", "shadow", next);
+  if (paint) {
+    paintLook();
+  }
 }
 
 function addSlider(root, { label, min, max, step, value, digits, suffix, onInput }) {
@@ -258,6 +265,7 @@ addSlider(spreads, {
   suffix: "",
   onInput(next) {
     spread = next;
+    paintLook();
   },
 });
 addSlider(softnesses, {
@@ -270,6 +278,7 @@ addSlider(softnesses, {
   suffix: "",
   onInput(next) {
     softness = next;
+    paintLook();
   },
 });
 addSlider(distances, {
@@ -282,6 +291,7 @@ addSlider(distances, {
   suffix: "",
   onInput(next) {
     distance = next;
+    paintLook();
   },
 });
 addSlider(positions, {
@@ -294,6 +304,7 @@ addSlider(positions, {
   suffix: "°",
   onInput(next) {
     angle = next;
+    paintLook();
   },
 });
 addSlider(heats, {
@@ -306,6 +317,7 @@ addSlider(heats, {
   suffix: "",
   onInput(next) {
     heat = next;
+    paintLook();
   },
 });
 addSlider(grains, {
@@ -318,6 +330,7 @@ addSlider(grains, {
   suffix: "",
   onInput(next) {
     grain = next;
+    paintLook();
   },
 });
 addSlider(heatSoftness, {
@@ -330,12 +343,30 @@ addSlider(heatSoftness, {
   suffix: "",
   onInput(next) {
     heatSoft = next;
+    paintLook();
   },
 });
 for (const item of SHADOWS) {
   addEffect(shadows, item, "shadow", selectShadow);
 }
-selectShadow(shadow);
+selectShadow(shadow, false);
+
+function currentLook() {
+  return { color, width, spread, softness, distance, angle, heat, grain, heatSoft, shadow };
+}
+
+function paintLook() {
+  const look = currentLook();
+  renderer.restyle(look);
+  for (const shot of [...undoStack, ...redoStack]) {
+    for (const stroke of shot) {
+      Object.assign(stroke, look);
+    }
+  }
+  if (!local) {
+    socket.send({ type: "style", ...look });
+  }
+}
 
 function showMask(on) {
   maskButton.setAttribute("aria-pressed", on ? "true" : "false");

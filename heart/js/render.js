@@ -511,11 +511,26 @@ function createRenderer(canvas) {
       mask = Boolean(on);
       redraw();
     },
+    restyle(look) {
+      for (const stroke of strokes.values()) {
+        stroke.color = look.color;
+        stroke.width = look.width;
+        stroke.spread = glowNumber(look.spread, GLOW.spread, 0.4, 16);
+        stroke.distance = glowNumber(look.distance, GLOW.distance, 0, 4);
+        stroke.angle = glowNumber(look.angle, GLOW.angle, 0, 360);
+        stroke.heat = glowNumber(look.heat, HEAT.amount, 0, 1);
+        stroke.grain = glowNumber(look.grain, HEAT.grain, 0.02, 0.45);
+        stroke.softness = glowNumber(look.softness, GLOW.softness, 0, 1);
+        stroke.heatSoft = glowNumber(look.heatSoft, HEAT.softness, 0, 1);
+        stroke.shadow = level(look.shadow);
+      }
+      redraw();
+    },
   };
 }
 
 function applyMessage(renderer, message) {
-  if (message.type === "replay") {
+  if (message.type === "replay" || message.type === "style") {
     renderer.replay(message.strokes || [], Boolean(message.mask));
     return;
   }
