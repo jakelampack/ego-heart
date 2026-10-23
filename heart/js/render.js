@@ -83,14 +83,10 @@ function level(value) {
   return number === 1 || number === 2 ? number : 0;
 }
 
-// Neon tube. halo and mid are blur distances as a multiple of the stroke width.
-// coreMix lifts the center toward white. coreScale is the bright center's thickness.
+// Neon halo. Distances are multiples of the stroke width. The stroke itself stays the chosen color.
 const NEON = {
   halo: [0, 3.4, 7.2],
   mid: [0, 1.15, 2.2],
-  tubeMix: 0.18,
-  coreMix: 0.9,
-  coreScale: 0.28,
 };
 
 function shadowInk(hex, mix) {
@@ -98,14 +94,6 @@ function shadowInk(hex, mix) {
   const green = Number.parseInt(hex.slice(3, 5), 16);
   const blue = Number.parseInt(hex.slice(5, 7), 16);
   return `rgba(${Math.round(red * mix)}, ${Math.round(green * mix)}, ${Math.round(blue * mix)}, 0.92)`;
-}
-
-function hotInk(hex, mix) {
-  const red = Number.parseInt(hex.slice(1, 3), 16);
-  const green = Number.parseInt(hex.slice(3, 5), 16);
-  const blue = Number.parseInt(hex.slice(5, 7), 16);
-  const lift = (channel) => Math.round(channel + (255 - channel) * mix);
-  return `rgb(${lift(red)}, ${lift(green)}, ${lift(blue)})`;
 }
 
 function strokeWidth(canvas, width) {
@@ -216,8 +204,7 @@ function createRenderer(canvas) {
       ctx.shadowBlur = width * NEON.mid[glow];
       paint();
       clearShadow();
-      drawInk(stroke, width, brush, hotInk(stroke.color, NEON.tubeMix));
-      drawInk(stroke, width * NEON.coreScale, brush, hotInk(stroke.color, NEON.coreMix));
+      paint();
     } else {
       paint();
     }
